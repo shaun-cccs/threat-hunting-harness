@@ -1,0 +1,107 @@
+{
+  "search_iocs": {
+    "properties": {
+      "query": {
+        "title": "Query",
+        "type": "string"
+      },
+      "limit": {
+        "default": 10,
+        "title": "Limit",
+        "type": "integer"
+      },
+      "order_by": {
+        "default": "last_submission_date-",
+        "title": "Order By",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "search_iocsArguments",
+    "type": "object"
+  },
+  "get_domain_report": {
+    "properties": {
+      "domain": {
+        "title": "Domain",
+        "type": "string"
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "title": "get_domain_reportArguments",
+    "type": "object"
+  },
+  "get_entities_related_to_a_domain": {
+    "properties": {
+      "domain": {
+        "title": "Domain",
+        "type": "string"
+      },
+      "relationship_name": {
+        "title": "Relationship Name",
+        "type": "string"
+      },
+      "descriptors_only": {
+        "title": "Descriptors Only",
+        "type": "boolean"
+      },
+      "limit": {
+        "default": 10,
+        "title": "Limit",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "domain",
+      "relationship_name",
+      "descriptors_only"
+    ],
+    "title": "get_entities_related_to_a_domainArguments",
+    "type": "object"
+  },
+  "get_ip_address_report": {
+    "properties": {
+      "ip_address": {
+        "title": "Ip Address",
+        "type": "string"
+      }
+    },
+    "required": [
+      "ip_address"
+    ],
+    "title": "get_ip_address_reportArguments",
+    "type": "object"
+  },
+  "get_entities_related_to_an_ip_address": {
+    "properties": {
+      "ip_address": {
+        "title": "Ip Address",
+        "type": "string"
+      },
+      "relationship_name": {
+        "title": "Relationship Name",
+        "type": "string"
+      },
+      "descriptors_only": {
+        "title": "Descriptors Only",
+        "type": "boolean"
+      },
+      "limit": {
+        "default": 10,
+        "title": "Limit",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "ip_address",
+      "relationship_name",
+      "descriptors_only"
+    ],
+    "title": "get_entities_related_to_an_ip_addressArguments",
+    "type": "object"
+  }
+}

@@ -50,7 +50,7 @@ Inspect configuration without any network requests:
 uv run hunt connections
 ```
 
-Check Shodan account metadata without indicator queries:
+Perform account metadata checks and a Censys MCP inventory handshake, without indicator queries:
 
 ```bash
 uv run hunt connections --live
@@ -72,7 +72,7 @@ uv run ruff check src tests
 uv run pytest
 ```
 
-Provider adapters, native Codex profiles, and evaluation follow in separate branches.
+Native Codex profiles and evaluation follow in separate branches.
 
 ## Design
 

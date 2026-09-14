@@ -5,7 +5,9 @@ import secrets
 from pathlib import Path
 
 from .providers.base import Provider
+from .providers.mcp_source import McpSource
 from .providers.shodan import Shodan
+from .providers.transport import McpTransport
 
 
 def gateway_token(root: Path) -> str:
@@ -26,4 +28,26 @@ def providers(keys: dict[str, str], project: Path) -> dict[str, Provider]:
     result: dict[str, Provider] = {}
     if key := keys.get("SHODAN_API_KEY"):
         result["shodan"] = Shodan(key)
+    if key := keys.get("CENSYS_API_KEY"):
+        headers = {"Authorization": "Bearer " + key}
+        if keys.get("CENSYS_ORG_ID"):
+            headers["X-Organization-ID"] = keys["CENSYS_ORG_ID"]
+        result["censys"] = McpSource(
+            "censys",
+            McpTransport(url="https://mcp.platform.censys.io/platform/mcp/", headers=headers),
+        )
+    if key := keys.get("GTI_API_KEY") or keys.get("VT_APIKEY"):
+        # Use the project's pinned optional dependency, not an unrelated global
+        # executable whose matching schema says nothing about its implementation.
+        command = str(project / ".venv/bin/gti_mcp")
+        result["gti"] = McpSource("gti", McpTransport(command=command, env={"VT_APIKEY": key}))
+    if key := keys.get("GREYNOISE_API_KEY"):
+        result["greynoise"] = McpSource(
+            "greynoise",
+            McpTransport(
+                command="node",
+                args=[str(project / ".venv/greynoise/build/index.js")],
+                env={"GREYNOISE_API_KEY": key},
+            ),
+        )
     return result
