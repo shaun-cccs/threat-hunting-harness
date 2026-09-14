@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -78,6 +79,16 @@ def _run() -> None:
     decision.add_argument("finding_id")
     decision.add_argument("decision", choices=["accept", "reject", "needs_work"])
     decision.add_argument("--rationale", required=True)
+    client = commands.add_parser("client", help="Prepare or inspect a dedicated hunting client")
+    client.add_argument("action", choices=["prepare", "preflight", "launch", "fixture"])
+    client.add_argument("client", choices=["codex", "claude"])
+    client.add_argument(
+        "--workdir",
+        type=Path,
+        required=True,
+        help="Dedicated profile directory outside the source checkout",
+    )
+    client.add_argument("--endpoint", default="http://127.0.0.1:8765/mcp")
     args = parser.parse_args()
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
@@ -114,6 +125,28 @@ def _run() -> None:
                 indent=2,
             )
         )
+    elif args.command == "client":
+        from .clients import client_environment, command, preflight, prepare_client
+
+        if args.action == "fixture":
+            from .replay import fixture_workflow
+
+            result = asyncio.run(fixture_workflow(args.client, args.workdir))
+        else:
+            result = prepare_client(args.client, args.workdir, args.endpoint)
+        if args.action in ("preflight", "launch"):
+            token = gateway_token(args.state)
+            result = preflight(args.client, args.workdir, args.endpoint, token)
+            if args.action == "launch":
+                print(json.dumps(result, indent=2), flush=True)
+                raise SystemExit(
+                    subprocess.call(
+                        command(args.client, args.workdir, args.endpoint),
+                        cwd=args.workdir,
+                        env=client_environment(token),
+                    )
+                )
+        print(json.dumps(result, indent=2))
     else:
         gateway = Gateway(args.state)
         if args.command == "create":

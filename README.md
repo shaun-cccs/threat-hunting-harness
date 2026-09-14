@@ -1,6 +1,6 @@
 # Threat-hunting harness
 
-A local, authenticated MCP gateway for resumable threat hunts. Cases retain seeds, candidate infrastructure, source observations, query jobs, evidence reviews, analyst decisions, and exports. Provider adapters retrieve existing observations only.
+A local, authenticated MCP gateway for resumable threat hunts in Codex. Cases retain seeds, candidate infrastructure, source observations, query jobs, evidence reviews, analyst decisions, and exports. Provider adapters retrieve existing observations only.
 
 ## Install
 
@@ -42,6 +42,24 @@ uv run hunt export CASE_ID --output artifacts/exports
 
 Limits are optional and shared across callers. Unset limits impose no numeric hunt budget. An adapter rejects limits it cannot enforce; unknown upstream requests and credits remain unknown. Creating or reading a case does not query a provider. The documentation IP above is for offline examples.
 
+## Connect an agent client
+
+Use a dedicated directory outside this checkout so clients do not inherit provider credentials or benchmark answers:
+
+```bash
+uv run hunt client prepare codex --workdir /tmp/hunt-codex
+uv run hunt client preflight codex --workdir /tmp/hunt-codex
+uv run hunt client launch codex --workdir /tmp/hunt-codex
+```
+
+The launcher supplies the local gateway token through the child environment. [Client setup](docs/clients.md) distinguishes configuration verification, fixture workflow validation, and effective runtime controls. A successful configuration check alone is not proof of a restricted runtime. Claude profile scaffolding is retained, but its native workflow is deferred.
+
+The coordinator, investigators, and evidence reviewer use the same gateway. Analyst decisions are recorded through the trusted CLI after review:
+
+```bash
+uv run hunt decide CASE_ID FINDING_ID accept --rationale 'Reviewed dated evidence supports association'
+```
+
 ## Verify connectivity with limited requests
 
 Inspect configuration without any network requests:
@@ -72,7 +90,9 @@ uv run ruff check src tests
 uv run pytest
 ```
 
-Native Codex profiles and evaluation follow in separate branches.
+Fixture commands preserve earlier runs. Choose a new output directory for each replay.
+
+For an opt-in native Codex check with an authenticated client, run `uv run python scripts/verify_codex.py --output artifacts/native-check`. It invokes the model against a local synthetic gateway capped at one query, without live provider access. The script returns a nonzero exit status when the retained case does not show a reviewed and settled workflow.
 
 ## Design
 
