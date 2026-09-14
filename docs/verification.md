@@ -25,15 +25,17 @@ Local artifacts:
 
 ## Offline and client checks
 
-The complete reviewed implementation passed 78 tests; this branch excludes the evaluation tests introduced next. Strict mypy checking passed across 25 source files and the native verification script, Ruff passed for source/tests/scripts, and the locked dependency check and source/wheel builds passed. Two upstream Starlette test-client deprecation warnings remain. Provider contract fixtures and campaign replays run without provider credentials. Client fixtures use local authenticated MCP and Shodan-shaped synthetic observations. Independent implementation review findings were resolved before this branch split.
+The final offline suite passed: 78 tests. Strict mypy checking passed across 25 source files and the native verification script, Ruff passed for source/tests/scripts, and the locked dependency check and source/wheel builds passed. Two upstream Starlette test-client deprecation warnings remain. Provider contract fixtures and campaign replays run without provider credentials. Client fixtures use local authenticated MCP and Shodan-shaped synthetic observations. The [implementation review](implementation-review.md) records the independently reviewed findings and their fixes.
 
-Installed-client preflight and fixture replay are separate checks. See [client verification](clients.md) for the tested versions and unsupported runtime controls.
+Installed-client preflight and fixture replay are separate checks. See [client verification](clients.md) for the tested versions and unsupported runtime controls, and [evaluation](evaluation.md) for measured replay results and limits on their interpretation.
 
 Codex CLI 0.154.0 accepted the dedicated configuration with only the hunting MCP server enabled and all three native roles present. Its preflight reports `unified_exec` as an unsupported control. Claude Code 2.1.269 advertised the required flags and the generated files parsed successfully. Both reports retain `effective_runtime_enforcement: not_verified`; these checks did not invoke a model.
 
 The Codex-labeled SDK fixture replay completed a hunt and reopened the same case through authenticated MCP. It retained one synthetic query, two observations, reviewer assessments, scripted analyst decisions, the query limit, and a completed status. The retained transcript is `artifacts/client-codex-replay/transcript.json`. This is an SDK workflow replay, not a native Codex model run.
 
 A native Claude Code fixture attempt was blocked before inference by `Not logged in · Please run /login`. It made zero provider requests. The user then deferred Claude work (issue #11) in favor of Codex. Its retained scaffolding and SDK fixture are not a verified native workflow.
+
+The three-campaign evaluation command completed using synthetic Shodan observations and cited campaign indicator sets. Outputs under `artifacts/evaluation/` retain baseline/coordinated cases, transcripts, exports, query usage, and source gaps. All credited observations are retrospective in this corpus; the in-window-available recovery count is zero. These measurements support pipeline verification, not empirical discovery accuracy or a numeric production acceptance target.
 
 ## Native Codex workflow
 

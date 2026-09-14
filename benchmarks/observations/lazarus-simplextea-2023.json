@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic_shodan",
+  "hosts": {
+    "172.93.201.88": {
+      "data": [
+        {
+          "ip_str": "172.93.201.88",
+          "timestamp": "2023-03-29T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-lazarus-simplextea-2023"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2023-04-20",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        }
+      ]
+    }
+  },
+  "searches": {
+    "ssl.cert.fingerprint:\"harness-synthetic-lazarus-simplextea-2023\"": {
+      "total": 3,
+      "matches": [
+        {
+          "ip_str": "23.254.211.230",
+          "timestamp": "2023-03-29T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-lazarus-simplextea-2023"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2023-04-20",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        },
+        {
+          "ip_str": "192.0.2.12",
+          "timestamp": "2023-03-29T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "generic-shared-hosting"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2023-04-20",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        },
+        {
+          "ip_str": "198.51.100.12",
+          "timestamp": null,
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-lazarus-simplextea-2023"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2023-04-20",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        }
+      ]
+    }
+  },
+  "fail_hosts": {
+    "23.254.211.230": 429
+  }
+}

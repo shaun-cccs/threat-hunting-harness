@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "lunarweb-2020-2023",
+  "title": "LunarWeb diplomatic mission campaign",
+  "hypothesis": "Investigate distinctive recorded service relationships within the selected historical window.",
+  "seeds": [
+    "45.33.24.145"
+  ],
+  "start": "2020-05-20",
+  "end": "2023-12-31",
+  "limits": {},
+  "sources": [
+    {
+      "url": "https://www.welivesecurity.com/en/eset-research/moon-backdoors-lunar-landing-diplomatic-missions/",
+      "published_at": "2024-05-15"
+    },
+    {
+      "url": "https://github.com/eset/malware-ioc/blob/812c573dc8c354210893775b2de97d1fbf29be1b/turla/README.adoc",
+      "section": "To the Moon and back(doors): Lunar landing in diplomatic missions",
+      "commit": "812c573dc8c354210893775b2de97d1fbf29be1b"
+    }
+  ],
+  "window_basis": "Explicit evaluation slice of the cited historical investigation; not asserted as the entire campaign lifetime.",
+  "observation_fixture": "observations/lunarweb-2020-2023.json",
+  "conditions": {
+    "collection": "synthetic Shodan HTTP responses only",
+    "provider": "shodan",
+    "provider_version": "api-v1",
+    "client": "MCP Python SDK with scripted coordinator/investigator/reviewer roles",
+    "models_launched": false,
+    "live_provider_calls": 0,
+    "knowledge_policy": "retrospective; post-window and unknown availability retained and counted separately",
+    "random_seed": 0,
+    "analyst_assessments": null,
+    "credit_cost": null
+  }
+}

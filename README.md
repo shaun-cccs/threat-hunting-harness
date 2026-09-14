@@ -82,17 +82,20 @@ uv run hunt smoke --ip 1.1.1.1
 
 The smoke command queries Shodan's existing report, never the IP itself. It uses one query and one API request, with no search, pagination, or retry. It retains its case and sanitized result under `artifacts/live-smoke/`. [Verification results](docs/verification.md) record actual checks separately from offline fixtures.
 
-## Tests
+## Tests and evaluation
 
 ```bash
 uv run mypy src
 uv run ruff check src tests
 uv run pytest
+uv run hunt evaluate --output artifacts/evaluation
 ```
 
-Fixture commands preserve earlier runs. Choose a new output directory for each replay.
+Evaluation and fixture commands preserve earlier runs. Choose a new output directory for each replay.
 
 For an opt-in native Codex check with an authenticated client, run `uv run python scripts/verify_codex.py --output artifacts/native-check`. It invokes the model against a local synthetic gateway capped at one query, without live provider access. The script returns a nonzero exit status when the retained case does not show a reviewed and settled workflow.
+
+[Evaluation](docs/evaluation.md) describes the documented campaign cases, private scoring answers, enrichment baseline, evidence paths, and retrospective leakage. Replay measurements do not establish live provider coverage or real analyst acceptance. Missing analyst assessments and provider costs remain unmeasured.
 
 ## Design
 

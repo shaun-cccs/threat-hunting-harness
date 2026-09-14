@@ -89,6 +89,12 @@ def _run() -> None:
         help="Dedicated profile directory outside the source checkout",
     )
     client.add_argument("--endpoint", default="http://127.0.0.1:8765/mcp")
+    evaluation = commands.add_parser(
+        "evaluate", help="Replay campaigns against an enrichment baseline"
+    )
+    evaluation.add_argument("--benchmarks", type=Path, default=Path("benchmarks"))
+    evaluation.add_argument("--output", type=Path, default=Path("artifacts/evaluation"))
+    evaluation.add_argument("--case", action="append", dest="case_ids")
     args = parser.parse_args()
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
@@ -147,6 +153,12 @@ def _run() -> None:
                     )
                 )
         print(json.dumps(result, indent=2))
+    elif args.command == "evaluate":
+        from .evaluation import evaluate
+
+        print(
+            json.dumps(asyncio.run(evaluate(args.benchmarks, args.output, args.case_ids)), indent=2)
+        )
     else:
         gateway = Gateway(args.state)
         if args.command == "create":
