@@ -25,7 +25,7 @@ Git is sufficient to work with the current documentation. The proposed runtime u
 Clone this repository directly:
 
 ```bash
-git clone https://github.com/CybercentreCanada/threat-hunting-harness.git ~/Projects/threat-hunting-harness
+git clone https://github.com/shaun-cccs/threat-hunting-harness.git ~/Projects/threat-hunting-harness
 ```
 
 The local checkout is `~/Projects/threat-hunting-harness`, alongside the FAI workshop repository at `~/Projects/fai_workshop_ci`.
