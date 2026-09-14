@@ -28,10 +28,10 @@ Clone this repository directly:
 git clone https://github.com/CybercentreCanada/threat-hunting-harness.git
 ```
 
-It is also available as projects/threat-hunting in the private [FAI workshop repository](https://github.com/CybercentreCanada/fai_workshop_ci). From that repository, initialize the submodule with:
+It is also available as projects/threat-hunting-harness in the private [FAI workshop repository](https://github.com/CybercentreCanada/fai_workshop_ci). From that repository, initialize the submodule with:
 
 ```bash
-git submodule update --init --recursive projects/threat-hunting
+git submodule update --init --recursive projects/threat-hunting-harness
 ```
 
 ## Run

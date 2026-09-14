@@ -94,7 +94,7 @@ These are concrete recommendations for the remaining engineering choices, not de
 
 | Area | Proposed default |
 | --- | --- |
-| Language and packaging | Python 3.11+, with dependencies and run/verification instructions owned by this repository. The workshop mounts this separate repository at projects/threat-hunting/. |
+| Language and packaging | Python 3.11+, with dependencies and run/verification instructions owned by this repository. The workshop mounts this separate repository at projects/threat-hunting-harness/. |
 | Local runtime and transport | A long-lived local gateway exposing Streamable HTTP MCP on loopback, used by both clients. Authenticate the local endpoint; keep deployment local initially. |
 | Durable state | SQLite for case, job, query, and candidate indexes; source records in case-local JSONL artifacts; Markdown reports and structured JSON/CSV exports. |
 | Responsive execution | Record long-running queries as jobs with observable state and result references. Status reads remain available during investigation; resuming does not silently replay completed work. |
