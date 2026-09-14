@@ -105,7 +105,8 @@ live provider calls are possible through this fixture gateway."""
             *args,
             cwd=profile,
             env={
-                key: value for key, value in client_environment(token).items()
+                key: value
+                for key, value in client_environment(token).items()
                 if not key.startswith("HERDR_")
             },
             stdout=stdout,
@@ -127,7 +128,7 @@ live provider calls are possible through this fixture gateway."""
         store.analyst_decide(
             case["id"],
             finding["id"],
-            "accept",
+            "accept" if finding["reviews"][-1]["assessment"] == "supported" else "needs_work",
             "Scripted fixture-only decision; not a real analyst assessment",
         )
     report = {
@@ -147,15 +148,16 @@ live provider calls are possible through this fixture gateway."""
         "scripted_analyst_decisions": len(reviewed),
         "runtime_egress_enforcement": "not_verified",
     }
-    report["workflow_verified"] = bool(
+    verified = bool(
         process.returncode == 0
         and len(requests) == 1
         and reviewed
         and retained["status"] in ("completed", "paused")
     )
+    report["workflow_verified"] = verified
     (root / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
-    return report["workflow_verified"]
+    return verified
 
 
 if __name__ == "__main__":

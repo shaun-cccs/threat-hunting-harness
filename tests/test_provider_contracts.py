@@ -325,3 +325,56 @@ async def test_censys_bad_certificate_metadata_does_not_erase_other_search_candi
     assert page.complete is False
     assert page.gap == "unrecognized_provider_records"
     assert page.raw == raw
+
+
+@pytest.mark.parametrize(
+    "changed_schema,code,usage",
+    [
+        (
+            True,
+            "provider_tool_schema_changed",
+            {
+                "mcp_calls": 0,
+                "api_requests": 0,
+                "returned_records": 0,
+                "credits": 0,
+            },
+        ),
+        (
+            False,
+            "provider_rate_limited",
+            {
+                "mcp_calls": 1,
+                "api_requests": None,
+                "returned_records": None,
+                "credits": None,
+            },
+        ),
+    ],
+)
+async def test_failed_provider_call_accounts_only_for_dispatched_tools(changed_schema, code, usage):
+    adapter = source(
+        "greynoise",
+        "Rate limited (429): fixture-secret",
+        error=True,
+        changed_schema=changed_schema,
+    )
+    with pytest.raises(SourceGap) as error:
+        await adapter.fetch("lookup-ip-context", {"ip": "192.0.2.1"})
+    assert str(error.value) == code
+    assert error.value.usage == usage
+    assert "fixture-secret" not in str(error.value)
+
+
+async def test_provider_session_failure_before_dispatch_reports_zero_usage(tmp_path):
+    adapter = McpSource(
+        "greynoise", McpTransport(command=str(tmp_path / "missing-provider-executable"))
+    )
+    with pytest.raises(SourceGap, match="^provider_mcp_unavailable$") as error:
+        await adapter.fetch("lookup-ip-context", {"ip": "192.0.2.1"})
+    assert error.value.usage == {
+        "mcp_calls": 0,
+        "api_requests": 0,
+        "returned_records": 0,
+        "credits": 0,
+    }

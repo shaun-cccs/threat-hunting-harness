@@ -94,12 +94,14 @@ class McpTransport:
             return await self._inventory(session)
 
     async def invoke(self, tool: str, arguments: Record, schema: Record) -> Any:
+        dispatched = False
         try:
             async with self.session() as session:
                 inventory = await self._inventory(session)
                 matches = [item for item in inventory if item["name"] == tool]
                 if len(matches) != 1 or matches[0]["inputSchema"] != schema:
                     raise SourceGap("provider_tool_schema_changed")
+                dispatched = True
                 result = await session.call_tool(tool, arguments)
                 if result.isError:
                     messages = [part.text for part in result.content if part.type == "text"]
@@ -121,6 +123,14 @@ class McpTransport:
         except Exception as error:
             # AnyIO wraps errors raised inside a session in ExceptionGroup.
             # Keep our safe code instead of losing an entitlement/schema failure.
-            if gap := _known_gap(error):
-                raise gap from None
-            raise SourceGap("provider_mcp_unavailable") from None
+            gap = _known_gap(error)
+            # Initialization and inventory consume no provider tool allowance.
+            # Once dispatch starts, missing results cannot establish upstream
+            # request counts, credits, or how many records the provider returned.
+            usage = {
+                "mcp_calls": int(dispatched),
+                "api_requests": None if dispatched else 0,
+                "returned_records": None if dispatched else 0,
+                "credits": None if dispatched else 0,
+            }
+            raise SourceGap(str(gap) if gap else "provider_mcp_unavailable", usage=usage) from None

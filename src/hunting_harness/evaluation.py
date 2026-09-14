@@ -16,9 +16,10 @@ from typing import cast
 import httpx
 from starlette.applications import Starlette
 
-from .clients import ReplaySession, _write_exports, replay_session
+from .exports import write_exports
 from .models import CaseSpec, Record, indicator
 from .providers.shodan import Shodan
+from .replay import ReplaySession, replay_session
 from .server import create_app
 
 
@@ -227,7 +228,7 @@ async def _run(campaign: Record, fixture: Record, output: Path, mode: str) -> Re
             await coordinator.call("hunt_settle", {"case_id": case_id})
             exported = await coordinator.call("case_export", {"case_id": case_id})
     elapsed = time.perf_counter() - started
-    _write_exports(output, exported)
+    write_exports(output, exported)
     _save(output / "transcript.json", transcript)
     case = exported["json"]
     return {

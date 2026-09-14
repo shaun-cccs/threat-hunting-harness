@@ -114,12 +114,13 @@ def settle(case: Record) -> Record:
     )
     unexpanded = any(
         c["selected"]
-        and not any(
-            b["pivot"] == c["indicator"]
-            and b["status"] == "completed"
-            and set(c["evidence_ids"]) <= set(b.get("completed_evidence_ids", c["evidence_ids"]))
+        and not set(c["evidence_ids"])
+        <= {
+            evidence_id
             for b in case["branches"]
-        )
+            if b["pivot"] == c["indicator"] and b["status"] == "completed"
+            for evidence_id in b.get("completed_evidence_ids", b.get("evidence_ids", []))
+        }
         for c in case["candidates"]
     )
     waiting = any(not g.get("resolved_by") for g in case["source_gaps"]) or any(

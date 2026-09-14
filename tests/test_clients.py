@@ -34,7 +34,7 @@ def test_preparing_a_profile_cannot_overwrite_personal_client_configuration(tmp_
 
 
 async def test_both_client_replays_share_reviewed_state_across_restart(tmp_path):
-    from hunting_harness.clients import fixture_workflow
+    from hunting_harness.replay import fixture_workflow
 
     for client in ("codex", "claude"):
         output = tmp_path / client

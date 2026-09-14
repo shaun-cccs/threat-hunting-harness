@@ -51,7 +51,15 @@ class Page:
 
 
 class SourceGap(Exception):
-    """A safe status code, never an upstream exception containing credentials."""
+    """A safe status code with optional observed failure accounting.
+
+    None preserves the caller's existing accounting when usage is unknown.
+    A supplied mapping distinguishes known zeros from unobservable measures.
+    """
+
+    def __init__(self, code: str, *, usage: Record | None = None):
+        super().__init__(code)
+        self.usage = usage.copy() if usage is not None else None
 
 
 class Provider(Protocol):

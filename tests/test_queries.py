@@ -267,3 +267,87 @@ asyncio.run(run())
         assert case["branches"][0]["status"] == "waiting"
         assert reopened.hunt_settle(refs["case_id"])["status"] == "paused"
         assert len(case["queries"]) == 1
+
+
+async def test_schema_rejection_preserves_mcp_allowance_for_repaired_explicit_refresh(tmp_path):
+    from test_provider_contracts import source as fixture_source
+
+    payload = {"result": {"hits": [], "next_page_token": None}}
+    query = QuerySpec(
+        provider="censys",
+        operation="search",
+        arguments={"query": "services.port:443"},
+        pivot_from="192.0.2.1",
+        purpose="Recorded services",
+    )
+    rejected = fixture_source("censys", payload, changed_schema=True)
+    async with Gateway(tmp_path, {"censys": rejected}) as gateway:
+        case = gateway.case_create(case_spec().model_copy(update={"limits": {"mcp_calls": 1}}))
+        failed = await gateway.query_submit(case["id"], query)
+        failed = await finished(gateway, case["id"], failed["id"])
+        assert failed["status"] == "failed"
+        assert failed["gap"] == "provider_tool_schema_changed"
+        assert failed["usage"] == {
+            "mcp_calls": 0,
+            "api_requests": 0,
+            "returned_records": 0,
+            "credits": 0,
+        }
+        assert gateway.case_read(case["id"])["usage"]["query_calls"] == 1
+    repaired = fixture_source("censys", payload)
+    async with Gateway(tmp_path, {"censys": repaired}) as gateway:
+        refreshed = await gateway.query_submit(
+            case["id"], query.model_copy(update={"refresh": True})
+        )
+        refreshed = await finished(gateway, case["id"], refreshed["id"])
+        assert refreshed["status"] == "completed"
+        usage = gateway.case_read(case["id"])["usage"]
+        assert usage["query_calls"] == 2
+        assert usage["mcp_calls"] == 1
+        assert usage["api_requests"] is None
+        assert gateway.hunt_settle(case["id"])["status"] == "completed"
+
+
+@pytest.mark.parametrize(
+    "reported_usage",
+    [
+        None,
+        {
+            "mcp_calls": 1,
+            "api_requests": None,
+            "returned_records": None,
+            "credits": None,
+        },
+    ],
+)
+async def test_uncertain_or_dispatched_failures_keep_mcp_allowance_charged(
+    tmp_path, reported_usage
+):
+    from hunting_harness.providers.base import SourceGap
+
+    class UnavailableSource(FixtureSource):
+        async def fetch(self, operation, arguments):
+            raise SourceGap("provider_mcp_unavailable", usage=reported_usage)
+
+    async with Gateway(tmp_path, {"fixture": UnavailableSource([])}) as gateway:
+        case = gateway.case_create(case_spec().model_copy(update={"limits": {"mcp_calls": 1}}))
+        query = QuerySpec(
+            provider="fixture",
+            operation="lookup",
+            arguments={},
+            pivot_from="192.0.2.1",
+            purpose="Recorded context",
+        )
+        failed = await gateway.query_submit(case["id"], query)
+        failed = await finished(gateway, case["id"], failed["id"])
+        assert failed["status"] == "failed"
+        assert failed["usage"] == {
+            "mcp_calls": 1,
+            "api_requests": None,
+            "returned_records": None,
+            "credits": None,
+        }
+        assert failed["reservation"] == {"mcp_calls": 1, "api_requests": None}
+        with pytest.raises(ValueError, match="mcp_calls limit reached"):
+            await gateway.query_submit(case["id"], query.model_copy(update={"refresh": True}))
+        assert gateway.case_read(case["id"])["usage"]["query_calls"] == 1

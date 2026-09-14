@@ -4,9 +4,26 @@ import csv
 import html
 import io
 import json
+import os
 from copy import deepcopy
+from pathlib import Path
 
 from .models import Record
+
+
+def write_exports(output_dir: Path, exported: Record) -> None:
+    """Write a replay's report and structured case beside its retained artifacts."""
+    output_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    files = {
+        "report.md": exported["markdown"],
+        "case.json": json.dumps(exported["json"], indent=2) + "\n",
+        "candidates.csv": exported["csv"],
+    }
+    for name, content in files.items():
+        descriptor = os.open(output_dir / name, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            os.fchmod(output.fileno(), 0o600)
+            output.write(content)
 
 
 def escaped(value: object) -> str:

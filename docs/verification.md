@@ -25,7 +25,7 @@ Local artifacts:
 
 ## Offline and client checks
 
-The full offline suite passed: 69 tests. Strict mypy checking passed across 24 source files, Ruff passed for source/tests/scripts, and the locked dependency check and source/wheel builds passed. Two upstream Starlette test-client deprecation warnings remain. Provider contract fixtures and campaign replays run without provider credentials. Client fixtures use local authenticated MCP and Shodan-shaped synthetic observations.
+The final offline suite passed: 78 tests. Strict mypy checking passed across 25 source files and the native verification script, Ruff passed for source/tests/scripts, and the locked dependency check and source/wheel builds passed. Two upstream Starlette test-client deprecation warnings remain. Provider contract fixtures and campaign replays run without provider credentials. Client fixtures use local authenticated MCP and Shodan-shaped synthetic observations. The [implementation review](implementation-review.md) records the independently reviewed findings and their fixes.
 
 Installed-client preflight and fixture replay are separate checks. See [client verification](clients.md) for the tested versions and unsupported runtime controls, and [evaluation](evaluation.md) for measured replay results and limits on their interpretation.
 
@@ -36,3 +36,11 @@ The Codex-labeled SDK fixture replay completed a hunt and reopened the same case
 A native Claude Code fixture attempt was blocked before inference by `Not logged in · Please run /login`. It made zero provider requests. The user then deferred Claude work (issue #11) in favor of Codex. Its retained scaffolding and SDK fixture are not a verified native workflow.
 
 The three-campaign evaluation command completed using synthetic Shodan observations and cited campaign indicator sets. Outputs under `artifacts/evaluation/` retain baseline/coordinated cases, transcripts, exports, query usage, and source gaps. All credited observations are retrospective in this corpus; the in-window-available recovery count is zero. These measurements support pipeline verification, not empirical discovery accuracy or a numeric production acceptance target.
+
+## Native Codex workflow
+
+The corrected Codex 0.154.0 profile completed a native model workflow through the authenticated local fixture gateway: one synthetic Shodan search, two retained candidates, one historical-association finding, a separate reviewer assessment, and recorded completion. The reviewer marked campaign association insufficient rather than treating a service fingerprint as proof of maliciousness. The trusted verification script then recorded a fixture-only analyst decision. Both query and API-request limits were one; live provider requests were zero.
+
+The check is reproducible with `python scripts/verify_codex.py --output artifacts/native-check` in the project environment. It invokes the installed model client and stores case evidence and event logs in the selected new directory. The successful run's report is `artifacts/native-codex-verified/report.json`.
+
+Native testing exposed and fixed role files missing their MCP transport, the disabled tool host, and missing per-tool approval settings. The final profile enables only the named gateway tools with explicit scoped approvals. Working tool access and delegation are verified; operating-system egress confinement and absence of every alternate client capability remain unverified and are reported as such.

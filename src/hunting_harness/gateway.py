@@ -339,9 +339,12 @@ class Gateway:
             raise
         except SourceGap as error:
             code = str(error)
+            failure_usage = error.usage
             if not re.fullmatch(r"[a-z][a-z0-9_]{0,100}", code):
                 code = "provider_unavailable"
-            self.store.change(case_id, lambda c: self._fail(c, job_id, "failed", code))
+            self.store.change(
+                case_id, lambda c: self._fail(c, job_id, "failed", code, failure_usage)
+            )
         except Exception:
             # Provider exceptions can contain request URLs or credentials. Keep them out of cases.
             self.store.change(
@@ -440,11 +443,30 @@ class Gateway:
                 {"query_id": job_id, "reason": page.gap or "incomplete_retrieval"}
             )
         else:
-            for gap in case["source_gaps"]:
-                if gap["query_id"] in job["refresh_of"]:
-                    gap["resolved_by"] = job_id
+            recovered = job
+            while True:
+                for gap in case["source_gaps"]:
+                    if gap["query_id"] in recovered.get("refresh_of", []):
+                        gap["resolved_by"] = job_id
+                parent_id = recovered.get("continuation_of")
+                if not parent_id:
+                    break
+                parent = self._job(case, parent_id)
+                # A final page recovers earlier refresh attempts only through
+                # pages whose sole missing coverage was their continuation.
+                if parent.get("gap") not in (None, "incomplete_retrieval"):
+                    break
+                recovered = parent
 
     @staticmethod
-    def _fail(case: Record, job_id: str, status: str, reason: str) -> None:
-        Gateway._job(case, job_id).update(status=status, gap=reason, finished_at=now())
+    def _fail(
+        case: Record, job_id: str, status: str, reason: str, usage: Record | None = None
+    ) -> None:
+        job = Gateway._job(case, job_id)
+        job.update(status=status, gap=reason, finished_at=now())
+        if usage is not None:
+            for measure in ("mcp_calls", "api_requests", "returned_records", "credits"):
+                if measure in usage:
+                    job["usage"][measure] = usage[measure]
+            job["accounting_status"] = "reported"
         case["source_gaps"].append({"query_id": job_id, "reason": reason})

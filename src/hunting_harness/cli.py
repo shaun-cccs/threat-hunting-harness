@@ -135,7 +135,7 @@ def _run() -> None:
         from .clients import client_environment, command, preflight, prepare_client
 
         if args.action == "fixture":
-            from .clients import fixture_workflow
+            from .replay import fixture_workflow
 
             result = asyncio.run(fixture_workflow(args.client, args.workdir))
         else:
