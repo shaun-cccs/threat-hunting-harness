@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "lunarweb-2020-2023",
+  "withheld": [
+    "45.79.93.87",
+    "139.162.23.113"
+  ],
+  "known_seed_subset": [
+    "45.33.24.145"
+  ],
+  "source": {
+    "url": "https://github.com/eset/malware-ioc/blob/812c573dc8c354210893775b2de97d1fbf29be1b/turla/README.adoc",
+    "section": "To the Moon and back(doors): Lunar landing in diplomatic missions",
+    "commit": "812c573dc8c354210893775b2de97d1fbf29be1b"
+  },
+  "scope": "Historical reported infrastructure association only; no assertion of current malicious use or ownership.",
+  "analyst_assessments": null,
+  "indicator_observation_dates": "Use the cited report where explicit; otherwise unknown. Synthetic provider timestamps are not report claims."
+}

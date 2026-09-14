@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic_shodan",
+  "hosts": {
+    "45.33.24.145": {
+      "data": [
+        {
+          "ip_str": "45.33.24.145",
+          "timestamp": "2023-06-15T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-lunarweb-2020-2023"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2024-05-15",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        }
+      ]
+    }
+  },
+  "searches": {
+    "ssl.cert.fingerprint:\"harness-synthetic-lunarweb-2020-2023\"": {
+      "total": 3,
+      "matches": [
+        {
+          "ip_str": "45.79.93.87",
+          "timestamp": "2023-06-15T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-lunarweb-2020-2023"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2024-05-15",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        },
+        {
+          "ip_str": "192.0.2.11",
+          "timestamp": "2023-06-15T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "generic-shared-hosting"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2024-05-15",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        },
+        {
+          "ip_str": "198.51.100.11",
+          "timestamp": null,
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-lunarweb-2020-2023"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2024-05-15",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        }
+      ]
+    }
+  },
+  "fail_hosts": {}
+}

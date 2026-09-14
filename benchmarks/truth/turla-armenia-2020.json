@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "turla-armenia-2020",
+  "withheld": [
+    "134.209.222.206",
+    "85.222.235.156"
+  ],
+  "known_seed_subset": [
+    "37.59.60.199"
+  ],
+  "source": {
+    "url": "https://github.com/eset/malware-ioc/blob/812c573dc8c354210893775b2de97d1fbf29be1b/turla/README.adoc",
+    "section": "Turla watering holes in Armenia",
+    "commit": "812c573dc8c354210893775b2de97d1fbf29be1b"
+  },
+  "scope": "Historical reported infrastructure association only; no assertion of current malicious use or ownership.",
+  "analyst_assessments": null,
+  "indicator_observation_dates": "Use the cited report where explicit; otherwise unknown. Synthetic provider timestamps are not report claims."
+}

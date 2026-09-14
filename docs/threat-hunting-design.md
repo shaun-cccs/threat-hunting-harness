@@ -1,6 +1,6 @@
 # Threat-hunting harness design
 
-Status: ready for consolidated review. The workflow decisions below are accepted; the proposed implementation defaults and overall design await final confirmation before implementation.
+Status: implementation baseline for GitHub issues #1–#13. The user authorized implementation of these tickets. Runtime usage is in the [README](../README.md), and observed validation results and remaining external limitations are in the [verification record](verification.md). The proposal language below records the design history.
 
 ## Intended outcome
 
@@ -133,6 +133,6 @@ The concrete benchmark cases and numeric acceptance thresholds will be establish
 
 ## Review status
 
-Workflow decisions through the natural completion rule and playbook approach are accepted. The proposed implementation defaults, provider choices, and the interpretation of deferred approvals as automatic scoped lookups are presented together for final confirmation. Implementation has not started.
+Workflow decisions through the natural completion rule and playbook approach are accepted. The user subsequently authorized implementing all issues, including the Python gateway, provider adapters, shared client profiles, exports, and replay evaluation. Follow the runtime documentation for current behavior; historical proposal language is not an additional implementation approval gate.
 
 Domain terminology is in [CONTEXT.md](../CONTEXT.md). Relevant decisions are [existing observations only](adr/0001-use-existing-observations-only.md), the [deferred batch-approval design](adr/0002-approve-bounded-external-query-batches.md), and the [shared gateway](adr/0003-share-hunt-execution-through-an-mcp-gateway.md).
