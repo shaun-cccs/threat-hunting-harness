@@ -141,15 +141,19 @@ class Gateway:
         return usage
 
     def provider_operations(self) -> Record:
+        """List configured providers and their supported query operations."""
         return {name: provider.operations() for name, provider in self.providers.items()}
 
     def candidate_select(self, case_id: str, selection: Expansion) -> Record:
+        """Select a retained candidate for expansion using evidence aligned with campaign dates."""
         return self.store.change(case_id, lambda c: analysis.select(c, selection))
 
     def finding_propose(self, case_id: str, claim: Claim) -> Record:
+        """Propose a finding linked to retained evidence for subsequent review."""
         return self.store.change(case_id, lambda c: analysis.propose(c, claim))
 
     def finding_review(self, case_id: str, finding_id: str, review: Review) -> Record:
+        """Record an evidence review of a finding before the analyst's decision."""
         return self.store.change(case_id, lambda c: analysis.review(c, finding_id, review))
 
     def analyst_decide(
@@ -160,6 +164,7 @@ class Gateway:
         )
 
     def candidate_defer(self, case_id: str, candidate: str, rationale: str) -> Record:
+        """Defer expansion of a candidate with a rationale while preserving its evidence."""
         return self.store.change(case_id, lambda c: lifecycle.defer(c, candidate, rationale))
 
     def branch_record(
@@ -173,6 +178,7 @@ class Gateway:
         evidence_ids: list[str] | None = None,
         query_ids: list[str] | None = None,
     ) -> Record:
+        """Create or update an investigation branch with its status, reason, and evidence scope."""
         return self.store.change(
             case_id,
             lambda c: lifecycle.branch(
@@ -181,14 +187,17 @@ class Gateway:
         )
 
     def hunt_settle(self, case_id: str) -> Record:
+        """Assess remaining work and record whether the hunt is active, paused, or completed."""
         return self.store.change(case_id, lifecycle.settle)
 
     def case_resume(
         self, case_id: str, new_seeds: list[str] | None = None, refresh: bool = False
     ) -> Record:
+        """Resume with new seeds or an explicit refresh without replaying provider queries."""
         return self.store.change(case_id, lambda c: lifecycle.resume(c, new_seeds or [], refresh))
 
     def case_export(self, case_id: str) -> Record:
+        """Render retained case evidence and source records as Markdown, JSON, and CSV content."""
         case = self.case_read(case_id)
         case["source_records"] = {}
         case["export_gaps"] = []
@@ -206,6 +215,7 @@ class Gateway:
         return exports.render(case)
 
     def job_read(self, case_id: str, job_id: str) -> Record:
+        """Read a submitted query job's status, usage, and retained result metadata."""
         return self._job(self.case_read(case_id), job_id)
 
     @staticmethod
@@ -216,6 +226,11 @@ class Gateway:
         raise ValueError("Unknown query in this case")
 
     async def query_submit(self, case_id: str, query: QuerySpec) -> Record:
+        """Submit a provider query within shared case limits and return a job to poll with job_read.
+
+        Matching submissions reuse retained jobs unless refresh is explicitly requested.
+        Pagination requires a separate submission; results are retained before narrowing.
+        """
         query = QuerySpec.model_validate(deepcopy(query.model_dump()))
         if self.worker_lock is None:
             raise ValueError("Start the gateway before submitting queries")

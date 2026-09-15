@@ -103,7 +103,7 @@
   },
   {
     "name": "provider_operations",
-    "description": "",
+    "description": "List configured providers and their supported query operations.",
     "inputSchema": {
       "properties": {},
       "title": "provider_operationsArguments",
@@ -117,7 +117,7 @@
   },
   {
     "name": "query_submit",
-    "description": "",
+    "description": "Submit a provider query within shared case limits and return a job to poll with job_read.\n\n        Matching submissions reuse retained jobs unless refresh is explicitly requested.\n        Pagination requires a separate submission; results are retained before narrowing.\n        ",
     "inputSchema": {
       "$defs": {
         "QuerySpec": {
@@ -198,7 +198,7 @@
   },
   {
     "name": "job_read",
-    "description": "",
+    "description": "Read a submitted query job's status, usage, and retained result metadata.",
     "inputSchema": {
       "properties": {
         "case_id": {
@@ -225,7 +225,7 @@
   },
   {
     "name": "candidate_select",
-    "description": "",
+    "description": "Select a retained candidate for expansion using evidence aligned with campaign dates.",
     "inputSchema": {
       "$defs": {
         "Expansion": {
@@ -298,7 +298,7 @@
   },
   {
     "name": "candidate_defer",
-    "description": "",
+    "description": "Defer expansion of a candidate with a rationale while preserving its evidence.",
     "inputSchema": {
       "properties": {
         "case_id": {
@@ -330,7 +330,7 @@
   },
   {
     "name": "finding_propose",
-    "description": "",
+    "description": "Propose a finding linked to retained evidence for subsequent review.",
     "inputSchema": {
       "$defs": {
         "Claim": {
@@ -457,7 +457,7 @@
   },
   {
     "name": "finding_review",
-    "description": "",
+    "description": "Record an evidence review of a finding before the analyst's decision.",
     "inputSchema": {
       "$defs": {
         "Review": {
@@ -544,7 +544,7 @@
   },
   {
     "name": "branch_record",
-    "description": "",
+    "description": "Create or update an investigation branch with its status, reason, and evidence scope.",
     "inputSchema": {
       "properties": {
         "case_id": {
@@ -628,7 +628,7 @@
   },
   {
     "name": "hunt_settle",
-    "description": "",
+    "description": "Assess remaining work and record whether the hunt is active, paused, or completed.",
     "inputSchema": {
       "properties": {
         "case_id": {
@@ -650,7 +650,7 @@
   },
   {
     "name": "case_resume",
-    "description": "",
+    "description": "Resume with new seeds or an explicit refresh without replaying provider queries.",
     "inputSchema": {
       "properties": {
         "case_id": {
@@ -692,7 +692,7 @@
   },
   {
     "name": "case_export",
-    "description": "",
+    "description": "Render retained case evidence and source records as Markdown, JSON, and CSV content.",
     "inputSchema": {
       "properties": {
         "case_id": {

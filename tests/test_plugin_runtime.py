@@ -379,7 +379,7 @@ def test_failed_health_cannot_report_stale_ready(plugin_environment, monkeypatch
         plugin.stopped.set()
 
 
-async def test_bundled_tool_catalog_matches_backend_and_initializes_without_dependencies():
+async def test_bundled_tool_catalog_matches_backend():
     spec = importlib.util.spec_from_file_location(
         "build_plugin_tools", ROOT / "scripts/build_plugin_tools.py"
     )
@@ -387,8 +387,14 @@ async def test_bundled_tool_catalog_matches_backend_and_initializes_without_depe
     spec.loader.exec_module(module)
     expected = await module.catalog()
     assert json.loads((ROOT / "assets/plugin-tools.json").read_text()) == expected
+    blank = [tool["name"] for tool in expected if not (tool.get("description") or "").strip()]
+    assert not blank, f"Tool descriptions must be nonempty for Claude/Bedrock: {blank}"
+
+
+@pytest.mark.parametrize("plugin_root", [ROOT, ROOT / "plugins/threat-hunting-harness"])
+async def test_plugin_discovery_has_descriptions_without_dependencies(plugin_root):
     # -S disables site-packages: initial discovery must work before bootstrap installs anything.
-    request = {
+    initialize = {
         "jsonrpc": "2.0",
         "id": 1,
         "method": "initialize",
@@ -398,16 +404,27 @@ async def test_bundled_tool_catalog_matches_backend_and_initializes_without_depe
             "clientInfo": {"name": "fixture", "version": "1"},
         },
     }
+    requests = [
+        initialize,
+        {"jsonrpc": "2.0", "method": "notifications/initialized"},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+    ]
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-S",
-        str(ROOT / "scripts/plugin_stdio.py"),
+        str(plugin_root / "scripts/plugin_stdio.py"),
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
     output, errors = await asyncio.wait_for(
-        process.communicate(json.dumps(request).encode() + b"\n"), 3
+        process.communicate("".join(json.dumps(request) + "\n" for request in requests).encode()),
+        3,
     )
     assert process.returncode == 0, errors
-    assert json.loads(output)["result"]["serverInfo"]["name"] == "threat-hunting-harness"
+    replies = {reply["id"]: reply for reply in map(json.loads, output.splitlines())}
+    assert replies[1]["result"]["serverInfo"]["name"] == "threat-hunting-harness"
+    tools = replies[2]["result"]["tools"]
+    assert tools
+    blank = [tool["name"] for tool in tools if not (tool.get("description") or "").strip()]
+    assert not blank, f"Tool descriptions must be nonempty for Claude/Bedrock: {blank}"
