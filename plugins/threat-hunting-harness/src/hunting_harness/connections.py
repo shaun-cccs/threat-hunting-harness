@@ -11,6 +11,7 @@ from dotenv import dotenv_values
 
 from .models import Record, now
 from .providers.censys import Censys
+from .providers.shodan import Shodan
 
 PROVIDER_VARIABLES = (
     "SHODAN_API_KEY",
@@ -22,6 +23,7 @@ PROVIDER_VARIABLES = (
 )
 METADATA_TIMEOUT = 15
 CENSYS_TIMEOUT = 35
+SHODAN_TIMEOUT = 25
 
 
 def credentials(env_file: Path) -> dict[str, str]:
@@ -84,6 +86,16 @@ async def _censys_check(keys: dict[str, str]) -> Record:
         }
 
 
+async def _shodan_check(keys: dict[str, str]) -> Record:
+    if not keys.get("SHODAN_API_KEY"):
+        return {"status": "not_configured", "requests": 0}
+    try:
+        async with asyncio.timeout(SHODAN_TIMEOUT):
+            return await Shodan(keys["SHODAN_API_KEY"]).check_connection()
+    except TimeoutError:
+        return {"status": "provider_transport_unavailable", "requests": 1}
+
+
 async def validate_connections(keys: dict[str, str], output: Path) -> Record:
     """Check each configured account once, concurrently, without indicator queries."""
     output.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -94,7 +106,6 @@ async def validate_connections(keys: dict[str, str], output: Path) -> Record:
         "providers": {},
     }
     endpoints = {
-        "shodan": ("SHODAN_API_KEY", "https://api.shodan.io/api-info", "query"),
         "gti": ("GTI_API_KEY", "https://www.virustotal.com/api/v3/users/me", "x-apikey"),
         "greynoise": ("GREYNOISE_API_KEY", "https://api.greynoise.io/v3/user", "key"),
     }
@@ -107,8 +118,8 @@ async def validate_connections(keys: dict[str, str], output: Path) -> Record:
         for provider, (variable, url, auth) in endpoints.items()
     ]
     # All checks fit within the longest individual deadline instead of accumulating
-    # three metadata deadlines before starting the Censys account check.
-    results = await asyncio.gather(*checks, _censys_check(keys))
-    report["providers"] = dict(zip([*endpoints, "censys"], results, strict=True))
+    # metadata deadlines before starting the SDK account checks.
+    results = await asyncio.gather(*checks, _shodan_check(keys), _censys_check(keys))
+    report["providers"] = dict(zip([*endpoints, "shodan", "censys"], results, strict=True))
     write_report(output / "connections.json", report)
     return report

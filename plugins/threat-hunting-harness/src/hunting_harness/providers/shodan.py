@@ -1,15 +1,63 @@
-"""Narrow Shodan API adapter. No scan or DNS resolution interface exists."""
+"""Shodan Python SDK retrieval with one observable request and raw JSON per page."""
 
+import asyncio
 import ipaddress
 import logging
 from typing import Any
 
-import httpx
+import requests
 from pydantic import Field, SecretStr, StrictBool, StrictInt, field_validator
+from requests.adapters import BaseAdapter
+from shodan import APIError  # type: ignore[import-untyped]
+from shodan import Shodan as SDK
 
 from ..models import Input, Record, now
 from .base import Observation, Page, SourceGap, observation_time
 from .parsing import coverage, object_rows
+
+SDK_VERSION = "1.31.0"
+
+
+def http_gap(status: int) -> str:
+    return {
+        400: "provider_invalid_request",
+        401: "provider_authentication_failed",
+        403: "provider_access_denied",
+        404: "provider_record_not_found",
+        429: "provider_rate_limited",
+    }.get(status, f"provider_http_{status}")
+
+
+class _Session(requests.Session):
+    """Bound and observe the pinned SDK's synchronous Requests transport."""
+
+    def __init__(self, transport: BaseAdapter | None):
+        super().__init__()
+        self.trust_env = False
+        self.requests = 0
+        self.response: requests.Response | None = None
+        if transport is not None:
+            self.mount("https://", transport)
+
+    def send(self, request: requests.PreparedRequest, **kwargs: Any) -> requests.Response:
+        # One attempted dispatch is the reservation ceiling, including SDK changes.
+        if self.requests:
+            raise self.failure("unexpected_provider_request")
+        kwargs.update(timeout=20, allow_redirects=False)
+        self.requests += 1
+        self.response = super().send(request, **kwargs)
+        return self.response
+
+    def failure(self, code: str) -> SourceGap:
+        return SourceGap(
+            code,
+            usage={
+                "api_requests": self.requests,
+                "mcp_calls": 0,
+                "returned_records": None if self.requests else 0,
+                "credits": None if self.requests else 0,
+            },
+        )
 
 
 class Host(Input):
@@ -29,11 +77,11 @@ class Search(Input):
 
 class Shodan:
     name = "shodan"
-    version = "api-v1"
+    version = f"sdk-{SDK_VERSION}-adapter-1"
     api_requests_per_call: int | None = 1
     mcp_calls_per_call = 0
 
-    def __init__(self, key: str, transport: httpx.AsyncBaseTransport | None = None):
+    def __init__(self, key: str, transport: BaseAdapter | None = None):
         self.key = SecretStr(key)
         self.transport = transport
 
@@ -45,51 +93,67 @@ class Shodan:
             raise ValueError("Unsupported existing-observation operation")
         (Host if operation == "host" else Search).model_validate(arguments)
 
-    async def request(self, path: str, params: Record) -> Record:
-        # Shodan authenticates in the URL; request logging must not emit it.
-        logging.getLogger("httpx").setLevel(logging.WARNING)
-        logging.getLogger("httpcore").setLevel(logging.WARNING)
-        async with httpx.AsyncClient(
-            transport=self.transport, timeout=20, follow_redirects=False, trust_env=False
-        ) as client:
+    def _request(self, operation: str, arguments: Record) -> tuple[Any, Record]:
+        # urllib3 debug messages include the credential-bearing request URL.
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+        with _Session(self.transport) as session:
             try:
-                response = await client.get(
-                    "https://api.shodan.io" + path,
-                    params={**params, "key": self.key.get_secret_value()},
-                )
-            except httpx.HTTPError:
-                raise SourceGap("transport_unavailable") from None
-        # A missing host report is not a successful empty search. It may reflect
-        # unavailable coverage; never retry it using fresh scans or DNS lookups.
-        errors = {
-            401: "provider_authentication_failed",
-            403: "provider_access_denied",
-            404: "provider_record_not_found",
-            429: "provider_rate_limited",
-        }
-        if response.status_code != 200:
-            raise SourceGap(
-                errors.get(response.status_code, f"provider_http_{response.status_code}")
-            )
+                sdk = SDK(self.key.get_secret_value())
+                sdk._session.close()
+                sdk._session = session
+                # Ignore SHODAN_API_URL; credentials go only to the reviewed provider.
+                sdk.base_url = "https://api.shodan.io"
+                if operation == "host":
+                    host = Host.model_validate(arguments)
+                    sdk.host(host.ip, history=host.history, minify=False)
+                elif operation == "search":
+                    search = Search.model_validate(arguments)
+                    sdk.search(search.query, page=search.page, minify=False)
+                elif operation == "account_check":
+                    sdk.info()
+                else:
+                    raise ValueError("Unsupported Shodan operation")
+            except APIError:
+                # SDK exceptions discard status and may include credentials. Use
+                # the captured response instead, including malformed success bodies.
+                if session.response is None:
+                    raise session.failure("provider_transport_unavailable") from None
+            except Exception:
+                raise session.failure("provider_sdk_unavailable") from None
+            response = session.response
+            if response is None:
+                raise session.failure("provider_response_unavailable")
+            if response.status_code != 200:
+                raise session.failure(http_gap(response.status_code))
+            try:
+                raw = response.json()
+            except ValueError:
+                raw = response.text
+            return raw, {"http_status": response.status_code, "api_requests": session.requests}
+
+    async def check_connection(self) -> Record:
         try:
-            result: Any = response.json()
-        except ValueError:
-            raise SourceGap("invalid_provider_response") from None
-        if not isinstance(result, dict) or "error" in result:
-            raise SourceGap("invalid_provider_response")
-        return result
+            raw, metadata = await asyncio.to_thread(self._request, "account_check", {})
+            return {
+                "status": "authenticated"
+                if isinstance(raw, dict) and "error" not in raw
+                else "response_schema_changed",
+                "http_status": metadata["http_status"],
+                "requests": metadata["api_requests"],
+            }
+        except SourceGap as error:
+            return {"status": str(error), "requests": (error.usage or {}).get("api_requests", 0)}
 
     async def fetch(self, operation: str, arguments: Record) -> Page:
         self.validate(operation, arguments)
-        if operation == "search":
-            search = Search.model_validate(arguments)
-            raw = await self.request("/shodan/host/search", search.model_dump())
-            page = self._search_page(search, raw)
+        raw, metadata = await asyncio.to_thread(self._request, operation, arguments)
+        if not isinstance(raw, dict) or "error" in raw:
+            page = Page([], raw, complete=False, gap="invalid_provider_response")
+        elif operation == "search":
+            page = self._search_page(Search.model_validate(arguments), raw)
         else:
             host = Host.model_validate(arguments)
-            raw = await self.request(
-                f"/shodan/host/{host.ip}", {"history": str(host.history).lower()}
-            )
             rows, malformed = object_rows(raw.get("data"))
             records = []
             for row in rows:
@@ -111,7 +175,9 @@ class Shodan:
                 # The API returns stored history, with no promised start date or
                 # guarantee that it covers every instant in the campaign window.
                 coverage(page, "historical_coverage_bounds_unavailable")
+        page.api_requests, page.mcp_calls = metadata.pop("api_requests"), 0
         page.metadata.update(
+            metadata,
             provider_version=self.version,
             retrieved_at=now(),
             raw_scope="provider_API_response",

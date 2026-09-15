@@ -5,11 +5,12 @@ from test_queries import case_spec, finished
 from hunting_harness.gateway import Gateway
 from hunting_harness.models import QuerySpec
 from hunting_harness.providers.shodan import Shodan
+from hunting_harness.shodan_fixture import ShodanFixtureTransport
 
 
 async def test_source_gap_pauses_hunt_and_explicit_refresh_can_complete_it(tmp_path):
     responses = [httpx.Response(429), httpx.Response(200, json={"data": []})]
-    provider = Shodan("fixture", transport=httpx.MockTransport(lambda r: responses.pop(0)))
+    provider = Shodan("fixture", transport=ShodanFixtureTransport(lambda r: responses.pop(0)))
     async with Gateway(tmp_path, {"shodan": provider}) as gateway:
         case = gateway.case_create(case_spec())
         query = QuerySpec(
@@ -35,11 +36,11 @@ async def test_source_gap_pauses_hunt_and_explicit_refresh_can_complete_it(tmp_p
 
 async def test_independent_branch_at_same_pivot_keeps_its_query_scope_during_outage(tmp_path):
     def response(request):
-        if request.url.params.get("history") == "false":
+        if "history" not in request.url.params:
             return httpx.Response(503)
         return httpx.Response(200, json={"data": []})
 
-    provider = Shodan("fixture", transport=httpx.MockTransport(response))
+    provider = Shodan("fixture", transport=ShodanFixtureTransport(response))
     async with Gateway(tmp_path, {"shodan": provider}) as gateway:
         case = gateway.case_create(case_spec())
         query = QuerySpec(

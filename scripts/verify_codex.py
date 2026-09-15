@@ -20,6 +20,7 @@ from hunting_harness.gateway import Gateway
 from hunting_harness.models import CaseSpec
 from hunting_harness.providers.shodan import Shodan
 from hunting_harness.server import create_app
+from hunting_harness.shodan_fixture import ShodanFixtureTransport
 
 
 async def verify(root: Path, timeout: int) -> bool:
@@ -69,7 +70,7 @@ async def verify(root: Path, timeout: int) -> bool:
     app = create_app(
         root / "cases",
         token,
-        {"shodan": Shodan("fixture-only", transport=httpx.MockTransport(response))},
+        {"shodan": Shodan("fixture-only", transport=ShodanFixtureTransport(response))},
     )
     server = uvicorn.Server(
         uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error", access_log=False)

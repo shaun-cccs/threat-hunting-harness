@@ -5,12 +5,13 @@ from test_queries import case_spec, finished
 from hunting_harness.gateway import Gateway
 from hunting_harness.models import Claim, QuerySpec, Review
 from hunting_harness.providers.shodan import Shodan
+from hunting_harness.shodan_fixture import ShodanFixtureTransport
 
 
 async def test_review_and_analyst_decision_preserve_historical_claim_and_evidence(tmp_path):
     provider = Shodan(
         "fixture",
-        transport=httpx.MockTransport(
+        transport=ShodanFixtureTransport(
             lambda r: httpx.Response(
                 200,
                 json={

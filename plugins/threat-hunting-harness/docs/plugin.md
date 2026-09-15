@@ -38,7 +38,7 @@ By default, runtime caches live under `~/.cache/threat-hunting-harness/` and wor
 
 ## Providers and query budgets
 
-Ask the hunt skill to `Check my provider configuration` to inspect credentials and prepared dependencies without contacting providers. A request to test live connectivity performs bounded account metadata checks, including Censys organization or account access through its Python SDK. Existing connectivity results are reused; refreshing a report makes new checks. Neither kind of setup is a substitute for an intelligence query.
+Ask the hunt skill to `Check my provider configuration` to inspect credentials and prepared dependencies without contacting providers. A request to test live connectivity performs bounded account metadata checks, including Shodan account metadata and Censys organization or account access through their Python SDKs. Existing connectivity results are reused; refreshing a report makes new checks. Neither kind of setup is a substitute for an intelligence query.
 
 Every investigator shares the limits you specify for the case; unset limits impose no hidden numeric budget. Query submissions, upstream MCP calls, HTTP requests, and provider credits are different measures: GreyNoise's internal retries, for example, prevent exact API-request accounting. Unknown usage remains unknown, and providers reject numeric limits they cannot enforce. See [provider operations](providers.md) for the allowlists.
 

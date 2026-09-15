@@ -1,0 +1,67 @@
+{
+  "repository": "https://github.com/shaun-cccs/Censys-Auto-TSA-Opencode-Agent",
+  "revision": "765fd14e0a844abd2e0a4cf6316d630b0827f266",
+  "copied_at": "2026-09-15",
+  "source_state": "Clean local checkout at the recorded revision.",
+  "scope": "Six documentation files copied from docs/. Field catalogs are byte-identical; syntax documents have contextual edits recorded below. No source-project workflow, credentials, or live result artifacts are imported.",
+  "artifacts": [
+    {
+      "file": "censys_query_language.md",
+      "sha256": "4cfaf007b283155a51407dc39e712f5b42c828086c4e1e9761e6d5ef4f0c99b1",
+      "source_path": "docs/censys_query_language.md",
+      "source_url": "https://github.com/shaun-cccs/Censys-Auto-TSA-Opencode-Agent/blob/765fd14e0a844abd2e0a4cf6316d630b0827f266/docs/censys_query_language.md",
+      "source_sha256": "0e81819e80a12122d8c16753247f92a31fc4bafbeefbbe770e5c545980b14946",
+      "changes": [
+        "Qualified historical measurements; origin details are kept in this metadata only.",
+        "Made control queries conditional on gateway scope/allowance and preserved unresolved negatives.",
+        "Qualified source-specific cookie and response-truncation claims.",
+        "Clarified API CIDR syntax and quoted ip_range example."
+      ]
+    },
+    {
+      "file": "censys_regex_language.md",
+      "sha256": "c661c5eeaee3cacecc671ed62083d24be803ec552d1babc5e3a50844fcb0877d",
+      "source_path": "docs/censys_regex_language.md",
+      "source_url": "https://github.com/shaun-cccs/Censys-Auto-TSA-Opencode-Agent/blob/765fd14e0a844abd2e0a4cf6316d630b0827f266/docs/censys_regex_language.md",
+      "source_sha256": "10c93a774894ec1ccd5a7f9370a16433be3565812b352e0727c7a22dd0cac9cf",
+      "changes": [
+        "Qualified historical measurements; origin details are kept in this metadata only.",
+        "Replaced account-specific price/plan assumptions with gateway entitlement and unknown-credit guidance.",
+        "Kept positive controls within case scope/allowance and distinguished syntax from coverage uncertainty.",
+        "Removed a source-project SKILL.md assumption and marked query-only examples as text."
+      ]
+    },
+    {
+      "file": "queryable_fields/host_censys_queryable_fields.md",
+      "sha256": "8094f336b623eb18fc6e64cb57855f8b192cf05bcc91500990fbc756edde4758",
+      "source_path": "docs/queryable_fields/host_censys_queryable_fields.md",
+      "source_url": "https://github.com/shaun-cccs/Censys-Auto-TSA-Opencode-Agent/blob/765fd14e0a844abd2e0a4cf6316d630b0827f266/docs/queryable_fields/host_censys_queryable_fields.md",
+      "source_sha256": "8094f336b623eb18fc6e64cb57855f8b192cf05bcc91500990fbc756edde4758",
+      "changes": []
+    },
+    {
+      "file": "queryable_fields/web_censys_queryable_fields.md",
+      "sha256": "09b62ec9942428b7168226f7a1f0907b99b8cc3f553da4ff4442cca4ff7e1551",
+      "source_path": "docs/queryable_fields/web_censys_queryable_fields.md",
+      "source_url": "https://github.com/shaun-cccs/Censys-Auto-TSA-Opencode-Agent/blob/765fd14e0a844abd2e0a4cf6316d630b0827f266/docs/queryable_fields/web_censys_queryable_fields.md",
+      "source_sha256": "09b62ec9942428b7168226f7a1f0907b99b8cc3f553da4ff4442cca4ff7e1551",
+      "changes": []
+    },
+    {
+      "file": "queryable_fields/certificate_censys_queryable_fields.md",
+      "sha256": "0560a92d663707f24f98a1e28b868aacc83a96c4f4a0d2fe63eeea3a29c5635c",
+      "source_path": "docs/queryable_fields/certificate_censys_queryable_fields.md",
+      "source_url": "https://github.com/shaun-cccs/Censys-Auto-TSA-Opencode-Agent/blob/765fd14e0a844abd2e0a4cf6316d630b0827f266/docs/queryable_fields/certificate_censys_queryable_fields.md",
+      "source_sha256": "0560a92d663707f24f98a1e28b868aacc83a96c4f4a0d2fe63eeea3a29c5635c",
+      "changes": []
+    },
+    {
+      "file": "queryable_fields/misc_censys_queryable_fields.md",
+      "sha256": "f8c46c200255be4f5c69b8ef181d2c3eb3ed38b4ae2b9241df5bcb11693b1dec",
+      "source_path": "docs/queryable_fields/misc_censys_queryable_fields.md",
+      "source_url": "https://github.com/shaun-cccs/Censys-Auto-TSA-Opencode-Agent/blob/765fd14e0a844abd2e0a4cf6316d630b0827f266/docs/queryable_fields/misc_censys_queryable_fields.md",
+      "source_sha256": "f8c46c200255be4f5c69b8ef181d2c3eb3ed38b4ae2b9241df5bcb11693b1dec",
+      "changes": []
+    }
+  ]
+}

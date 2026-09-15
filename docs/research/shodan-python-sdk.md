@@ -1,0 +1,75 @@
+# Shodan Python SDK behind the hunting gateway
+
+Research date: 2026-09-15. Scope: use the official [`achillean/shodan-python`](https://github.com/achillean/shodan-python) package behind the existing hunting gateway, following the Censys SDK migration. Source was inspected at immutable commit `87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8`, package version `1.31.0`, in `/tmp/shodan-sdk-research`. The published PyPI `1.31.0` source distribution has identical `shodan/client.py`, `shodan/exception.py`, `setup.py`, and `requirements.txt` files. Official API, credit, and banner documentation was also read. No credentials were accessed and no authenticated provider queries were executed for this research. [1][2][3]
+
+The starting worktree already used a narrow direct Shodan HTTP adapter, rather than a Shodan MCP server. The migration changes that adapter's client to the official SDK; agents continue using the shared hunting MCP gateway. The earlier MCP comparison explains why the adapter preserves full banners, explicit pages, and historical observations. [12][13]
+
+Follow-up: the migration is implemented; see the [provider contract](../providers.md) and [migration verification](../verification.md#shodan-sdk-migration-2026-09-15). The recommendations below record the research that informed it.
+
+## Findings
+
+**The official SDK can supply the existing host and search operations without changing the evidence model, provided the harness retains control over HTTP dispatch.** Its methods return decoded JSON without typed-model projection, but its synchronous Requests client has no explicit timeout and its errors discard HTTP status and response metadata. Search also defaults to truncating larger fields. [3][4][5]
+
+| Concern | Verified SDK/API behavior | Implication for this harness |
+| --- | --- | --- |
+| Package and authentication | Install `shodan==1.31.0`; import `Shodan` from `shodan`. Construct `Shodan(key)` with the API key explicitly. `_request` adds the key as a URL query parameter; the constructor also accepts `proxies` and reads `SHODAN_API_URL` as a base-URL override. [1][2][3] | Continue loading `SHODAN_API_KEY` through the existing credential loader. Fix the destination to `https://api.shodan.io`, disable inherited proxy settings, and avoid retaining/logging authenticated URLs. |
+| Host information | `host(ip, history=True, minify=False)` calls `/shodan/host/{ip}`. `history` defaults to `False` in the SDK; enabling it requests historical non-current banners. Host `minify=True` removes banners entirely. False options are omitted from the request because their API defaults are false. [4][6] | Explicitly preserve the harness's `history=True` default and keep `minify=False`. Retain every banner and its timestamp. The SDK does not expose start/end history bounds or a host-history page argument. |
+| Search | `search(query, page=n, minify=False)` makes one `/shodan/host/search` request and returns `matches`, `total`, and optional `facets`. The SDK/API default `minify=True` truncates larger fields; `fields` requests a projection. [4][7] | Pass `minify=False`, omit `fields`, and retain the full response. Keep the existing explicit one-page operation and gateway continuation. |
+| Count | `count(query, facets=None)` calls `/shodan/host/count` and returns `total`, plus requested facet counts, without host matches. The API explicitly says this operation consumes no query credits. [4][7] | This is a possible later read operation for assessing query breadth. Do not silently add a count preflight to every search: it is still an extra API request. |
+| Account metadata | `info()` makes one `/api-info` request. The official response includes plan, `query_credits`, `scan_credits`, and account usage limits. [4][8] | Use it for the explicit connectivity check. Account balances are not exact credit charges attributable to a particular query. |
+| Pagination and retries | Search pages contain up to 100 results. `search_cursor()` calculates page count from `total`, automatically retrieves subsequent pages, and retries later-page failures with sleeps (`retries=5` by default). Plain `search`, `host`, and `info` each make one `_request` call without an SDK retry loop. [3][4][7][9] | Avoid `search_cursor`; let the gateway persist each response before authorizing a continuation. Retain the existing unknown-total and short/inconsistent-page handling. |
+| HTTP behavior | The SDK uses synchronous `requests.Session.get` without a timeout or redirect override. Requests defaults to no timeout, redirects enabled for GET, and `trust_env=True`; its default adapter has zero retries. The SDK maintains a one-request-per-second throttle on each client instance. [3][10] | Run SDK calls off the async event loop. Set the HTTP timeout and disable redirects/environment trust at the session boundary; keep retries disabled. A per-client throttle is not an aggregate limit across multiple clients. |
+| Errors and raw response | `_request` catches connection exceptions and converts them to `APIError('Unable to connect to Shodan')`; it has special handling for 401, 403, and 502, parses JSON, and raises on a top-level `error`. `APIError` only retains its message value. Successful JSON is returned directly. [3][5] | Capture HTTP status and raw JSON before SDK processing, then classify failures using the captured status. Otherwise 404 and 429 distinctions can disappear, and a non-200 JSON object without `error` may appear successful. |
+
+### Evidence fields and normalization
+
+The API's host response has host-level fields such as `last_update` and a `data` array of individual service banners. Search instead returns those banners in `matches`, alongside `total`. Its examples show `_shodan.id`, `timestamp`, `ip_str`, `port`, `transport`, raw `data`, and nested protocol information. Shodan's banner specification defines `timestamp` as the time the banner was collected in UTC and `ip_str` as the string representation of the IP address. [6][7][11]
+
+Preserve the existing normalization contract: one observation per banner; validated `ip_str` for search indicators; the validated requested IP as the fallback for a host banner; that banner's `timestamp` as `observed_at`; and its string `_shodan.id`, when present, as the provider record ID. Retain the complete banner as observation data and the complete top-level response as raw evidence, including unknown fields, multiline banner text, certificates, HTTP information, and original timestamp strings. Do not substitute a host's `last_update` for a missing banner timestamp. These are harness recommendations grounded in the documented response structure and existing provider contract. [6][7][11][12]
+
+`history=True` requests historical banners; neither the inspected host method nor its API documentation establishes a guaranteed earliest date, continuous coverage, or a configurable historical window. A successful response therefore demonstrates retrieval of available history, not coverage of every date in the hunt. Preserve the existing `available_provider_history_only` coverage metadata. [4][6][12]
+
+### Request and credit accounting
+
+Shodan documents query-credit consumption when a search uses a filter or requests page two or later; one query credit provides 100 results. An unfiltered first page can be free of query-credit charges. Count requests do not consume query credits. These billing rules describe expected costs; the inspected host/search response contract supplies no call-specific charged-credit field, and account balances returned by `info()` do not establish attribution when other clients may also query the account. Keep host/search `Page.credits=None` unless reliable call-specific evidence becomes available. [7][8][14]
+
+With one plain SDK operation, redirects and retries disabled, and HTTP dispatch observed, a fetch can retain the existing reservation of one API request and zero upstream MCP calls. Local validation must still happen before dispatch; malformed data and missing-host responses should remain distinct from a successful empty search. SDK cursor iteration, automatic preflight calls, redirects, or future retry configuration would change that accounting and require explicit support. [3][4][10][12]
+
+### Existing observations and DNS
+
+The SDK describes `host()` as retrieving available IP information and `search()` as searching the Shodan database. It separately exposes active `scan()` and `scan_internet()` operations, alert and organization mutations, streaming interfaces, and other functionality. The adapter should continue allowlisting only the existing host/search operations; `info()` belongs to the connectivity path. Installing the library is not a reason to expose its entire API. [3][4][12]
+
+For a possible later DNS investigation, `api.dns.domain_info(domain, history=False, type=None, page=1)` reads Shodan's DNS database. The API documents historical results, pages of 100, one query credit per lookup, DNS record `last_seen`, and a `more` flag. This is separate from `/dns/resolve` and `/dns/reverse`; the inspected reference describes those as resolution/lookup endpoints without establishing that their answers come exclusively from previously stored observations. No DNS operation is needed for this migration, and the existing boundary excluding DNS resolution should remain. [3][15][12]
+
+## Implementation recommendation
+
+1. Pin `shodan==1.31.0` and use its public host/search/info methods behind the existing provider interface. Its dependencies are Requests, Click, click-plugins, colorama, XlsxWriter, and tldextract (plus a conditional Python 2 `ipaddress` backport); package metadata does not declare a `Requires-Python` minimum. Resolve and lock the actual dependency set with the harness's Python >=3.11 requirement. [1][2][12]
+2. Provide a controlled session boundary with finite timeout, no redirects, no retries, disabled environment trust, fixed Shodan base URL, and response capture before parsing. Keep the synchronous SDK work outside the event loop and close each session after use. The SDK exposes `_session` as an implementation attribute, rather than a documented constructor injection argument; isolate that dependency and cover it in tests against the pinned package. [3][10]
+3. Request `minify=False` explicitly for search, keep host history enabled by default, and preserve normalization and gateway continuation behavior. Test full raw fields, history arguments, one-request accounting, safe status-based failures, rejected operations, credential redaction, and the SDK-backed metadata check using controlled responses. [4][6][7][12]
+4. Update dependency locks, the generated plugin bundle, provider/verification documentation, and the agent's Shodan reference together. Treat installation and offline fixtures separately from authenticated production validation. [12]
+
+## Verification and limits
+
+The PyPI source distribution was downloaded without installing or executing it, and its SHA-256 matched PyPI's published digest: `c73275386ea02390e196c35c660706a28dd4d537c5a21eb387ab6236fac251f6`. The four package files named above were byte-compared with the inspected checkout. No matching `1.31.0` Git tag was returned by the repository tag lookup, so the source links below use the verified commit. [1][2]
+
+API documentation was retrieved from `https://developer.shodan.io/api?format=json`, which returned HTML; the Datapedia page was likewise retrieved with `?format=json`. The normal API reference URL initially returned HTTP 403 in this research environment. Local retrieved pages and extracted text are under `/tmp/shodan-sdk-docs`. The query string is a documentation-retrieval workaround, not an API parameter recommendation.
+
+This note establishes the inspected package and documented API behavior. It does not establish authenticated account access, historical retention, production performance, exact per-query credit charges, or the implementation's test results. Record migration validation separately in [verification](../verification.md).
+
+## Sources
+
+1. [PyPI package metadata and release files](https://pypi.org/pypi/shodan/json) and [version 1.31.0 release](https://pypi.org/project/shodan/1.31.0/).
+2. [Pinned SDK package metadata](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/setup.py), [dependencies](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/requirements.txt), and [README](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/README.rst).
+3. [SDK constructor, session, dispatch, and error processing](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py#L294).
+4. [SDK count, host, and info methods](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py#L406) and [search and cursor methods](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py#L534).
+5. [SDK exceptions](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/exception.py).
+6. [Official API: host information and historical banners](https://developer.shodan.io/api#shodan-host-details).
+7. [Official API: search](https://developer.shodan.io/api#shodan-host-search) and [count](https://developer.shodan.io/api#shodan-host-count).
+8. [Official API: account plan information](https://developer.shodan.io/api#api-info).
+9. [SDK tutorial: search result fields and pages of up to 100](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/docs/tutorial.rst#L42).
+10. [Requests 2.32.5 session defaults and dispatch](https://github.com/psf/requests/blob/v2.32.5/src/requests/sessions.py#L438) and [adapter retry defaults](https://github.com/psf/requests/blob/v2.32.5/src/requests/adapters.py#L72).
+11. [Shodan Datapedia: banner schema](https://datapedia.shodan.io/).
+12. Local worktree: [provider adapter](../../src/hunting_harness/providers/shodan.py), [provider/page contract](../../src/hunting_harness/providers/base.py), [gateway](../../src/hunting_harness/gateway.py), [credential loading and connection checks](../../src/hunting_harness/connections.py), [provider tests](../../tests/test_shodan.py), [dependencies](../../pyproject.toml), and [bundle builder](../../scripts/build_plugin_bundle.py).
+13. [Earlier Shodan MCP assessment](threat-intelligence-mcp.md) and [Censys SDK migration research](censys-python-sdk.md).
+14. [Official Shodan help: credit types explained](https://help.shodan.io/the-basics/credit-types-explained).
+15. [Official API: domain DNS database](https://developer.shodan.io/api#dns-domain), [DNS resolution](https://developer.shodan.io/api#dns-resolve), [reverse DNS](https://developer.shodan.io/api#dns-reverse), and [SDK DNS domain method](https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py#L69).

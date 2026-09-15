@@ -8,7 +8,7 @@
   --output /tmp/hunt-evaluation-lunar
 ```
 
-Use a new output directory so previous runs remain intact. The Python API is `await evaluate(benchmark_root, output_dir, case_ids=None)`. `load_campaigns(benchmark_root)` returns only public seed manifests; `score_run(case, truth)` scores a retained case export independently. No model, provider credentials or network access is needed for replay. The Shodan adapter's external HTTP boundary is replaced by `httpx.MockTransport`; MCP sessions use authenticated in-process HTTP.
+Use a new output directory so previous runs remain intact. The Python API is `await evaluate(benchmark_root, output_dir, case_ids=None)`. `load_campaigns(benchmark_root)` returns only public seed manifests; `score_run(case, truth)` scores a retained case export independently. No model, provider credentials or network access is needed for replay. The Shodan SDK's Requests transport is replaced by `ShodanFixtureTransport`, which serves the existing HTTPX-shaped fixtures without network access; MCP sessions use authenticated in-process HTTP.
 
 ## Corpus and truth separation
 
