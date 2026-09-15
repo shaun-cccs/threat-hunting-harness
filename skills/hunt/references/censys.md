@@ -1,6 +1,6 @@
 # Censys queries and historical evidence
 
-Use this guide when selecting Censys operations, following history/search pages, or interpreting Censys source gaps. The gateway uses the Python SDK internally. Hunting agents use `provider_operations`, `query_submit`, `job_read`, and `case_read`; direct SDK calls bypass case evidence and accounting and are not part of the hunting workflow.
+Use this guide when constructing Censys queries, diagnosing unexpected empty results, selecting operations, following history/search pages, or interpreting source gaps. For choosing and evaluating a pivot, read [infrastructure discovery](infrastructure-discovery.md). The gateway uses the Python SDK internally. Hunting agents use `provider_operations`, `query_submit`, `job_read`, and `case_read`; direct SDK calls bypass case evidence and accounting and are not part of the hunting workflow.
 
 ## Choose and submit
 
@@ -14,6 +14,33 @@ Read the live `provider_operations` schema for `censys` before constructing argu
 | Which existing records match these conditions? | `search` | `query`; optional `fields`, `page_size` (default 50, maximum 100), `page_token` |
 
 Submit one operation through `query_submit`, using the existing case and its allowed scope. Inspect the finished job and retained case before deciding whether another request is needed. Each fetch makes one Censys API request and no provider MCP tool calls; credit cost remains unknown. The shared agent-facing gateway still uses MCP.
+
+## Construct a search and check unexpected zeros
+
+Choose fields from the retained record and the provider's documented query schema. A field returned in JSON is not necessarily searchable. The operation schema validates arguments; it does not validate the meaning of the CenQL string. Treat the following as known query failure modes and use controls when results are surprising.
+
+- Bind related conditions to the same object. A top-level `AND` can match a port on one service and content on another. Nest vendor/product/version together, and header key/value together. Use full field paths rather than aliases inside nested expressions.
+- `:` is tokenized and case-insensitive; `=` is exact and case-sensitive. Regex with `=~` is case-sensitive. Prefer exact observed values or meaningful pattern structure over common words.
+- Use supported regex syntax. Inline flags such as `(?i)` and unescaped quotes have produced misleading empty results. Express case alternatives with character classes and escape literal markup characters. Remember that a query string encoded in JSON has an additional escaping layer.
+- Quote CIDRs and specify the field, for example `host.ip="192.0.2.0/24"`. A fieldless quoted CIDR searches text. An exact stored BGP-prefix value answers a different question from IP membership in a subnet.
+- Preserve the favicon hash algorithm. `host.services.endpoints.http.favicons.hash_shodan` corresponds to Shodan's `http.favicon.hash`; quote its signed decimal value in CenQL, including the minus sign. A SHA-256 hash is a different value and cannot be substituted into the mmh3 field.
+- Check software, hardware and OS tags and decoded `host.services.protocol` fields. Inspect available `evidence[].data_path` on tags to understand the originating observation. A default protocol configuration identifies technology until other evidence gives it campaign significance.
+- Version text comparisons can be lexicographic: `7.4.10` can sort before `7.4.2`. Enumerate observed versions when needed instead of assuming semantic-version range ordering. A version constraint also excludes unknown versions.
+
+The following is a synthetic shape, not a campaign signature. Substitute evidence-backed values and confirmed field names:
+
+```text
+host.services: (port=443 and endpoints.http.html_title="Example console"
+  and endpoints.http.headers: (key="X-Example-Node" and value="sample"))
+```
+
+This binds the title and header to one service and the header key/value to one header entry. If the hypothesis requires the same HTTP endpoint, bind the conditions at `host.services.endpoints` as well; one service can have several endpoints.
+
+For an unexpected zero, check a retained known-positive example, simplify the pattern, verify the field and object scope, and compare observation periods. A failing control means the negative conclusion is unresolved; query semantics, changed data or coverage may explain it. For `C AND NOT B` returning zero, check `C` itself before deciding whether it found nothing or was already covered by `B`. Retry only with an explicit reason and within the case's scope and allowance.
+
+A field can be searchable even when its returned value is truncated, redacted or omitted by a projection. Retain the provider match as such; do not claim to have inspected bytes that were not returned. Body-size limits vary by response surface, so use the actual response metadata rather than assuming a fixed cutoff. Likewise, no software-tag match does not establish that the service is absent.
+
+Search can return host, web and certificate records. State the matched entity and use recorded relationships to pivot between them. The current gateway has no aggregation operation. Count retained results with their retrieval limits; do not present a sample as a global distribution. When interpreting supplied aggregations, distinguish host counts from service/field occurrences, query-matching objects from all objects on a host, and overlapping buckets from a unique union.
 
 ## Follow returned continuation
 
