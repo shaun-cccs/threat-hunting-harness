@@ -272,16 +272,21 @@ asyncio.run(run())
 async def test_schema_rejection_preserves_mcp_allowance_for_repaired_explicit_refresh(tmp_path):
     from test_provider_contracts import source as fixture_source
 
-    payload = {"result": {"hits": [], "next_page_token": None}}
+    payload = []
     query = QuerySpec(
-        provider="censys",
-        operation="search",
-        arguments={"query": "services.port:443"},
+        provider="gti",
+        operation="get_entities_related_to_a_domain",
+        arguments={
+            "domain": "seed.example",
+            "relationship_name": "resolutions",
+            "limit": 1,
+            "descriptors_only": False,
+        },
         pivot_from="192.0.2.1",
         purpose="Recorded services",
     )
-    rejected = fixture_source("censys", payload, changed_schema=True)
-    async with Gateway(tmp_path, {"censys": rejected}) as gateway:
+    rejected = fixture_source("gti", payload, changed_schema=True)
+    async with Gateway(tmp_path, {"gti": rejected}) as gateway:
         case = gateway.case_create(case_spec().model_copy(update={"limits": {"mcp_calls": 1}}))
         failed = await gateway.query_submit(case["id"], query)
         failed = await finished(gateway, case["id"], failed["id"])
@@ -294,8 +299,8 @@ async def test_schema_rejection_preserves_mcp_allowance_for_repaired_explicit_re
             "credits": 0,
         }
         assert gateway.case_read(case["id"])["usage"]["query_calls"] == 1
-    repaired = fixture_source("censys", payload)
-    async with Gateway(tmp_path, {"censys": repaired}) as gateway:
+    repaired = fixture_source("gti", payload)
+    async with Gateway(tmp_path, {"gti": repaired}) as gateway:
         refreshed = await gateway.query_submit(
             case["id"], query.model_copy(update={"refresh": True})
         )

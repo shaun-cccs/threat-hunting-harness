@@ -50,19 +50,21 @@ async def test_all_checks_start_concurrently_and_each_runs_once(tmp_path, monkey
             return httpx.Response(401 if "greynoise" in url else 200)
 
     class Censys:
-        def __init__(self, *, url, headers):
-            assert url == "https://mcp.platform.censys.io/platform/mcp/"
-            assert headers == {
-                "Authorization": "Bearer " + KEYS["CENSYS_API_KEY"],
-                "X-Organization-ID": KEYS["CENSYS_ORG_ID"],
+        def __init__(self, key, organization_id):
+            assert key == KEYS["CENSYS_API_KEY"]
+            assert organization_id == KEYS["CENSYS_ORG_ID"]
+
+        async def check_connection(self):
+            await start("censys-account")
+            return {
+                "status": "authenticated",
+                "http_status": 200,
+                "requests": 1,
+                "organization_id_configured": True,
             }
 
-        async def inventory(self):
-            await start("censys-inventory")
-            return [{"name": "get_host", "inputSchema": {"type": "object"}}]
-
     monkeypatch.setattr(connections.httpx, "AsyncClient", Client)
-    monkeypatch.setattr(connections, "McpTransport", Censys)
+    monkeypatch.setattr(connections, "Censys", Censys)
     async with asyncio.timeout(2):
         report = await connections.validate_connections(KEYS, tmp_path)
     assert len(started) == len(set(started)) == 4
@@ -73,19 +75,18 @@ async def test_all_checks_start_concurrently_and_each_runs_once(tmp_path, monkey
         "https://api.greynoise.io/v3/user": (None, {"key": KEYS["GREYNOISE_API_KEY"]}),
     }
     providers = report["providers"]
-    assert providers["shodan"] == {
-        "status": "authenticated", "http_status": 200, "requests": 1
-    }
+    assert providers["shodan"] == {"status": "authenticated", "http_status": 200, "requests": 1}
     assert providers["gti"] == providers["shodan"]
-    assert providers["greynoise"] == {
-        "status": "not_validated", "http_status": 401, "requests": 1
-    }
+    assert providers["greynoise"] == {"status": "not_validated", "http_status": 401, "requests": 1}
     assert providers["censys"] == {
-        "status": "mcp_connected", "tools": 1, "sessions": 1, "tool_calls": 0
+        "status": "authenticated",
+        "http_status": 200,
+        "requests": 1,
+        "organization_id_configured": True,
     }
     assert report["intelligence_queries"] == 0
     assert json.loads((tmp_path / "connections.json").read_text()) == report
-    assert len(json.loads((tmp_path / "censys-inventory.json").read_text())) == 1
+    assert not (tmp_path / "censys-inventory.json").exists()
     for secret in KEYS.values():
         assert secret not in (tmp_path / "connections.json").read_text()
 
@@ -111,24 +112,25 @@ async def test_hanging_checks_are_bounded_without_retries(tmp_path, monkeypatch)
             await asyncio.Event().wait()
 
     class Censys:
-        def __init__(self, **options):
+        def __init__(self, *args):
             pass
 
-        async def inventory(self):
-            censys_attempts.append("inventory")
+        async def check_connection(self):
+            censys_attempts.append("account")
             await asyncio.Event().wait()
 
     monkeypatch.setattr(connections.httpx, "AsyncClient", Client)
-    monkeypatch.setattr(connections, "McpTransport", Censys)
+    monkeypatch.setattr(connections, "Censys", Censys)
     async with asyncio.timeout(1):
         report = await connections.validate_connections(KEYS, tmp_path)
     assert len(metadata_attempts) == len(set(metadata_attempts)) == 3
-    assert censys_attempts == ["inventory"]
+    assert censys_attempts == ["account"]
     for provider in ("shodan", "gti", "greynoise"):
         assert report["providers"][provider] == {"status": "transport_unavailable", "requests": 1}
     assert report["providers"]["censys"] == {
-        "status": "connection_not_validated", "sessions": 1,
-        "tool_calls": 0, "organization_id_configured": True,
+        "status": "provider_transport_unavailable",
+        "requests": 1,
+        "organization_id_configured": True,
     }
 
 
@@ -137,11 +139,11 @@ async def test_no_credentials_creates_no_transports(tmp_path, monkeypatch):
         raise AssertionError("An unconfigured provider must not create a transport")
 
     monkeypatch.setattr(connections.httpx, "AsyncClient", unexpected)
-    monkeypatch.setattr(connections, "McpTransport", unexpected)
+    monkeypatch.setattr(connections, "Censys", unexpected)
     report = await connections.validate_connections({}, tmp_path)
     for provider in ("shodan", "gti", "greynoise"):
         assert report["providers"][provider] == {"status": "not_configured", "requests": 0}
-    assert report["providers"]["censys"] == {"status": "not_configured", "sessions": 0}
+    assert report["providers"]["censys"] == {"status": "not_configured", "requests": 0}
 
 
 def test_report_publication_is_private_and_atomic(tmp_path, monkeypatch):

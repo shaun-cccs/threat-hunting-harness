@@ -11,14 +11,12 @@ import jsonschema
 
 from ..models import Record, indicator, now
 from .base import Page, SourceGap, observation_time
-from .censys import censys_page
 from .greynoise import greynoise_page
 from .gti import gti_page
 from .parsing import error_code, payload
 from .transport import McpTransport
 
 VERSIONS = {
-    "censys": "hosted-schema-2026-09-14",
     "gti": "9885ec6856ec72333091cf1a3b2ac1bb26abe149",
     "greynoise": "cc3204dcde0994daebc09c0ac1a8ceea6cc59b81",
 }
@@ -120,7 +118,7 @@ class McpSource:
         data = payload(raw)
         if isinstance(data, dict) and (data.get("error") or data.get("errors")):
             raise SourceGap(error_code(data.get("error") or data["errors"]))
-        parser = {"censys": censys_page, "gti": gti_page, "greynoise": greynoise_page}[self.name]
+        parser = {"gti": gti_page, "greynoise": greynoise_page}[self.name]
         try:
             page = parser(operation, arguments, data)
         except (KeyError, TypeError, ValueError, AttributeError):

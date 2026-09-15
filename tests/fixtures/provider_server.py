@@ -34,25 +34,6 @@ async def call(name, arguments):
             return CallToolResult(
                 isError=True, content=[TextContent(type="text", text=json.dumps(payload))]
             )
-    elif source == "censys":
-        payload = {
-            "result": {
-                "hits": [
-                    {
-                        "host": {
-                            "ip": "192.0.2.4",
-                            "services": [
-                                {
-                                    "observed_at": "2024-01-06T00:00:00Z",
-                                    "cert": {"fingerprint_sha256": "a" * 64},
-                                }
-                            ],
-                        }
-                    }
-                ],
-                "next_page_token": "page-two",
-            }
-        }
     elif source == "gti":
         payload = [
             {

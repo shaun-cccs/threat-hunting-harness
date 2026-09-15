@@ -10,7 +10,6 @@ from hunting_harness.providers.transport import McpTransport
 @pytest.mark.parametrize(
     "name,operation,args,expected",
     [
-        ("censys", "search", {"query": "host.services.cert.fingerprint_sha256:abc"}, "192.0.2.4"),
         (
             "gti",
             "get_entities_related_to_a_domain",

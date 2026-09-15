@@ -20,7 +20,7 @@ def indicators(values: list[Any]) -> list[str]:
 
 
 def payload(raw: Any) -> Any:
-    """Unwrap FastMCP result envelopes, including Censys's JSON strings."""
+    """Unwrap FastMCP result envelopes and encoded JSON."""
     while True:
         if isinstance(raw, str):
             try:
@@ -60,7 +60,7 @@ def error_code(value: Any, default: str = "provider_report_unavailable") -> str:
             r"\b401\b|authentication|wrongcredentials|invalid.?api.?key",
             "provider_authentication_failed",
         ),
-        (r"\b403\b|forbidden|not.?entitled|permissiondenied", "provider_access_denied"),
+        (r"\b403\b|forbidden|not.?entitled|permission.?denied", "provider_access_denied"),
         (r"\b404\b|notfounderror|not found", "provider_record_not_found"),
     )
     return next((code for pattern, code in codes if re.search(pattern, message)), default)

@@ -26,6 +26,7 @@ from .exports import write_exports
 from .gateway import Gateway
 from .models import Record
 from .providers.base import Provider
+from .providers.censys import Censys
 from .providers.mcp_source import McpSource
 from .providers.shodan import Shodan
 from .providers.transport import McpTransport
@@ -38,13 +39,7 @@ def configured_providers(keys: dict[str, str], paths: dict[str, str]) -> dict[st
     if key := keys.get("SHODAN_API_KEY"):
         result["shodan"] = Shodan(key)
     if key := keys.get("CENSYS_API_KEY"):
-        headers = {"Authorization": "Bearer " + key}
-        if keys.get("CENSYS_ORG_ID"):
-            headers["X-Organization-ID"] = keys["CENSYS_ORG_ID"]
-        result["censys"] = McpSource(
-            "censys",
-            McpTransport(url="https://mcp.platform.censys.io/platform/mcp/", headers=headers),
-        )
+        result["censys"] = Censys(key, keys.get("CENSYS_ORG_ID"))
     if key := keys.get("GTI_API_KEY") or keys.get("VT_APIKEY"):
         result["gti"] = McpSource("gti", McpTransport(command=paths["gti"], env={"VT_APIKEY": key}))
     if key := keys.get("GREYNOISE_API_KEY"):
@@ -107,7 +102,9 @@ def configure_tools(mcp: FastMCP, gateway: Gateway, workspace: Path, state: Path
                 "cached_report": str(cached) if cached.exists() else None,
             }
         async with connection_lock:
-            fingerprint = hashlib.sha256(json.dumps(keys, sort_keys=True).encode()).hexdigest()
+            fingerprint = hashlib.sha256(
+                json.dumps([keys, Censys.version], sort_keys=True).encode()
+            ).hexdigest()
             identity = cached.parent / "configuration.json"
             same_configuration = False
             if identity.exists():

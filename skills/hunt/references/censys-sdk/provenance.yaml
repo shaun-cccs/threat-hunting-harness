@@ -1,0 +1,339 @@
+{
+  "repository": "https://github.com/censys/censys-sdk-python",
+  "revision": "43a8a3ac1161e655eff3061ba3b7ab934c185c55",
+  "package": "censys-platform",
+  "version": "0.16.2",
+  "retrieved_at": "2026-09-15T01:11:21.644345+00:00",
+  "source": "Official Git checkout retrieved during 2026-09-15 research; HEAD verified before extraction.",
+  "transformation": "Selected heading sections, complete model documents, and exact source line ranges only. Relative Markdown links are resolved to immutable upstream URLs. Wrapper explanations distinguish gateway behavior from upstream contracts. SHA-256 source hashes cover complete upstream files; excerpt hashes cover original selected lines before link rewriting; artifact hashes cover saved Markdown bytes.",
+  "artifacts": [
+    {
+      "file": "get-host.md",
+      "sha256": "9395d233930747a1f1930782e2e4a43a4e27296aef70ee7122269269acfb1338",
+      "sources": [
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/sdks/globaldata/README.md",
+          "source_sha256": "e67a5f5065ae690a84c72ddc80ee784ec96433f8ed39d1787a13168fba87e7c7",
+          "line_start": 310,
+          "line_end": 355,
+          "excerpt_sha256": "b8302c7d8a638796a5775dc2d3a0fa26e172fa6bc3dd50974914a6b6f7b913f6"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/global_data.py",
+          "source_sha256": "cc2d558ffd15742aa4d18616a40fead96b5424480d83ce97d0066c5d96b82f84",
+          "line_start": 1541,
+          "line_end": 1551,
+          "excerpt_sha256": "4fd1e75414a7770fc3f57476c530be31855b6bf4d70c65fb236eef1ac68fef5e"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/v3globaldataassethostresponse.md",
+          "source_sha256": "e3272822ee675ce986c2532db2dd3f24cb179ced06d0d7d4a224cc112d717f81",
+          "line_start": 1,
+          "line_end": 9,
+          "excerpt_sha256": "e3272822ee675ce986c2532db2dd3f24cb179ced06d0d7d4a224cc112d717f81"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/responseenvelopehostasset.md",
+          "source_sha256": "104eab65df59dcee76616cff284e2aadbcfd46c5e00f2ba5103a7d8f962a34b3",
+          "line_start": 1,
+          "line_end": 8,
+          "excerpt_sha256": "104eab65df59dcee76616cff284e2aadbcfd46c5e00f2ba5103a7d8f962a34b3"
+        }
+      ]
+    },
+    {
+      "file": "get-host-timeline.md",
+      "sha256": "1f2027ce685662b1a8a39bb215878bba221fb6a7b2b535b9f6051370be2fea44",
+      "sources": [
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/sdks/globaldata/README.md",
+          "source_sha256": "e67a5f5065ae690a84c72ddc80ee784ec96433f8ed39d1787a13168fba87e7c7",
+          "line_start": 408,
+          "line_end": 454,
+          "excerpt_sha256": "8da360e54a87aad02c08ef00fcb66902a18b33b4b1681e313e23996f99d8ad0d"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/global_data.py",
+          "source_sha256": "cc2d558ffd15742aa4d18616a40fead96b5424480d83ce97d0066c5d96b82f84",
+          "line_start": 1990,
+          "line_end": 2001,
+          "excerpt_sha256": "795c92bae5622666caf7bf7d5b5cdaf6f59e030e5bc7f1a495c72692701440cb"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/v3globaldataassethosttimelineresponse.md",
+          "source_sha256": "3a386e9d4bce8c1d0d833b88315a7b722210c3d258e98cd42748bdb70354667d",
+          "line_start": 1,
+          "line_end": 9,
+          "excerpt_sha256": "3a386e9d4bce8c1d0d833b88315a7b722210c3d258e98cd42748bdb70354667d"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/responseenvelopehosttimeline.md",
+          "source_sha256": "e873d370f23f37afaf4be11d31c74d73cd771cc96e02f6b9ca8332d4ba0fa7d2",
+          "line_start": 1,
+          "line_end": 8,
+          "excerpt_sha256": "e873d370f23f37afaf4be11d31c74d73cd771cc96e02f6b9ca8332d4ba0fa7d2"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/hosttimeline.md",
+          "source_sha256": "51ea5b2eb860784e955426e0aec74f1472c98e496e66d2ceebd0a5935c0a7403",
+          "line_start": 1,
+          "line_end": 9,
+          "excerpt_sha256": "51ea5b2eb860784e955426e0aec74f1472c98e496e66d2ceebd0a5935c0a7403"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/hosttimelineevent.md",
+          "source_sha256": "2cd900a2195716892349a3043f65e4ff6de980b746630933ab003b0172c93e5e",
+          "line_start": 1,
+          "line_end": 16,
+          "excerpt_sha256": "2cd900a2195716892349a3043f65e4ff6de980b746630933ab003b0172c93e5e"
+        }
+      ]
+    },
+    {
+      "file": "get-certificate.md",
+      "sha256": "6b2409fe97d10dcec08df1b409702a9ccc8134dc901f8e9b05eb6caa0b48edd3",
+      "sources": [
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/sdks/globaldata/README.md",
+          "source_sha256": "e67a5f5065ae690a84c72ddc80ee784ec96433f8ed39d1787a13168fba87e7c7",
+          "line_start": 127,
+          "line_end": 170,
+          "excerpt_sha256": "effbe3d9e4a979baf452e04de42b252d844f85e6e56721645ce1c8d282f237c8"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/global_data.py",
+          "source_sha256": "cc2d558ffd15742aa4d18616a40fead96b5424480d83ce97d0066c5d96b82f84",
+          "line_start": 614,
+          "line_end": 623,
+          "excerpt_sha256": "ff78ff4be416bd3601f077748c6763775b14934fd743ff8079cd6d72bfc2f8b7"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/v3globaldataassetcertificateresponse.md",
+          "source_sha256": "0b2ac16696a6f6e27493fbf2c86562dc4603faa17ef05d920f6a533ed682da2a",
+          "line_start": 1,
+          "line_end": 9,
+          "excerpt_sha256": "0b2ac16696a6f6e27493fbf2c86562dc4603faa17ef05d920f6a533ed682da2a"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/responseenvelopecertificateasset.md",
+          "source_sha256": "f77576dbd4fdcedabc29727792676a2fa3b62c2c75e996f1077e64b796fccd20",
+          "line_start": 1,
+          "line_end": 8,
+          "excerpt_sha256": "f77576dbd4fdcedabc29727792676a2fa3b62c2c75e996f1077e64b796fccd20"
+        }
+      ]
+    },
+    {
+      "file": "search.md",
+      "sha256": "7bbc5b0f4c7aa8c2054d8999ead5b07209c399ac4bf381b291b9d45dda42543c",
+      "sources": [
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/sdks/globaldata/README.md",
+          "source_sha256": "e67a5f5065ae690a84c72ddc80ee784ec96433f8ed39d1787a13168fba87e7c7",
+          "line_start": 1000,
+          "line_end": 1048,
+          "excerpt_sha256": "40fc990a6c3578a5d150d700fab4332eca0193bafe6622010456174734bbd3d3"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/global_data.py",
+          "source_sha256": "cc2d558ffd15742aa4d18616a40fead96b5424480d83ce97d0066c5d96b82f84",
+          "line_start": 4763,
+          "line_end": 4774,
+          "excerpt_sha256": "5c96f9e0ade0099f2d1071aff1d1f46d5942fe9b9ddaa35edee7e5173e0722df"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/searchqueryinputbody.md",
+          "source_sha256": "fe13a375fc087ebd6cd8616e97ee89df6ae6a72b3cf8fd037a3eac0fd3b87b94",
+          "line_start": 1,
+          "line_end": 11,
+          "excerpt_sha256": "fe13a375fc087ebd6cd8616e97ee89df6ae6a72b3cf8fd037a3eac0fd3b87b94"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/v3globaldatasearchqueryresponse.md",
+          "source_sha256": "4b1b09f0c9df6783093ad77035326e6c7da1fce02cbd9caf1331d1549b05aee5",
+          "line_start": 1,
+          "line_end": 9,
+          "excerpt_sha256": "4b1b09f0c9df6783093ad77035326e6c7da1fce02cbd9caf1331d1549b05aee5"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/responseenvelopesearchqueryresponse.md",
+          "source_sha256": "91195d96f86698160a1dc74b313b491df4d523c8093af4ce1e14a9fe0b3c26fa",
+          "line_start": 1,
+          "line_end": 8,
+          "excerpt_sha256": "91195d96f86698160a1dc74b313b491df4d523c8093af4ce1e14a9fe0b3c26fa"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/docs/models/searchqueryresponse.md",
+          "source_sha256": "b5b26afa8189327a31b5e8af8ee087b584ef96b1ede54a37958bd802768d5b4b",
+          "line_start": 1,
+          "line_end": 12,
+          "excerpt_sha256": "b5b26afa8189327a31b5e8af8ee087b584ef96b1ede54a37958bd802768d5b4b"
+        }
+      ]
+    },
+    {
+      "file": "client-and-errors.md",
+      "sha256": "dfac353cc85b175778d556a2abd2e2faa98f4fc934bb927535e3e8949572ea7a",
+      "sources": [
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/sdk.py",
+          "source_sha256": "211183eb9c0ac66d702d1112a1f7490f5dee61a3205dd940c5bed0ec84543ddf",
+          "line_start": 55,
+          "line_end": 67,
+          "excerpt_sha256": "e160e4e524f5c0a740fd3cc2f5d3a34a3bc6b57a635ef59bf694c64bb588bfb5"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/sdk.py",
+          "source_sha256": "211183eb9c0ac66d702d1112a1f7490f5dee61a3205dd940c5bed0ec84543ddf",
+          "line_start": 116,
+          "line_end": 120,
+          "excerpt_sha256": "d78d29bd84343035133eea82f8d611a163232876558c2249601dd31230195d5a"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/types/basemodel.py",
+          "source_sha256": "3142c3572c12571474968f21e703275e79011572cae435e604a0f57970152a01",
+          "line_start": 1,
+          "line_end": 13,
+          "excerpt_sha256": "8b15df8caee793dac0a7aa60496d403291c98bca12de36317c9287ed453c2d15"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/models/sdkbaseerror.py",
+          "source_sha256": "1ba59b858b14cf2825addb03e78463537a39e42679ec792e63407e33e6c22525",
+          "line_start": 1,
+          "line_end": 30,
+          "excerpt_sha256": "1ba59b858b14cf2825addb03e78463537a39e42679ec792e63407e33e6c22525"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/models/errormodel.py",
+          "source_sha256": "7f362c223c4e0a9d5376920f073feeb62ea1d9df508ed51e2907c8f39336c5d9",
+          "line_start": 1,
+          "line_end": 39,
+          "excerpt_sha256": "7f362c223c4e0a9d5376920f073feeb62ea1d9df508ed51e2907c8f39336c5d9"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/src/censys_platform/models/responsevalidationerror.py",
+          "source_sha256": "c670adaa4f0f48e7e682f04cf80157e8adddd7ed6add83d51ed82df40a3c0d78",
+          "line_start": 1,
+          "line_end": 27,
+          "excerpt_sha256": "c670adaa4f0f48e7e682f04cf80157e8adddd7ed6add83d51ed82df40a3c0d78"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/README.md",
+          "source_sha256": "0c3c115017cbfa1ce647e1da039c7040149abbdb81db03397d9aaab5b3197522",
+          "line_start": 352,
+          "line_end": 420,
+          "excerpt_sha256": "416c9fe23d94d0e1b0276f9b0d01186117a81b1947826bb4fd172b99cd7c6c5f"
+        },
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/README.md",
+          "source_sha256": "0c3c115017cbfa1ce647e1da039c7040149abbdb81db03397d9aaab5b3197522",
+          "line_start": 444,
+          "line_end": 458,
+          "excerpt_sha256": "3f70d225129e6cec1c3844020a3e975fbd118dbe88b123bb0aabd67771b086ec"
+        }
+      ]
+    },
+    {
+      "file": "LICENSE.md",
+      "sha256": "287bc6fb0159f70c7c4073a52e0128842868b93572ae390fee5fd8b68700b6e3",
+      "sources": [
+        {
+          "source_url": "https://github.com/censys/censys-sdk-python/blob/43a8a3ac1161e655eff3061ba3b7ab934c185c55/LICENSE",
+          "source_sha256": "0f3da95090fdc3763fb7f5311f61d1d23fd04ab82e45f405cc047594bddcd876",
+          "line_start": 1,
+          "line_end": 21,
+          "excerpt_sha256": "0f3da95090fdc3763fb7f5311f61d1d23fd04ab82e45f405cc047594bddcd876"
+        }
+      ]
+    }
+  ],
+  "release_tag": "v0.16.2",
+  "release_revision": "43a8a3ac1161e655eff3061ba3b7ab934c185c55",
+  "installed_package_verification": {
+    "package_version": "0.16.2",
+    "checked_on": "2026-09-15",
+    "result": "All listed installed package files byte-identical to the pinned release source.",
+    "files": [
+      {
+        "path": "basesdk.py",
+        "matches": true,
+        "sha256": "d5f0acbbb5ec6a35bd71ac7b85f30a5ec1df3054872303271aeb83eabd4c2a38"
+      },
+      {
+        "path": "global_data.py",
+        "matches": true,
+        "sha256": "cc2d558ffd15742aa4d18616a40fead96b5424480d83ce97d0066c5d96b82f84"
+      },
+      {
+        "path": "models/errormodel.py",
+        "matches": true,
+        "sha256": "7f362c223c4e0a9d5376920f073feeb62ea1d9df508ed51e2907c8f39336c5d9"
+      },
+      {
+        "path": "models/hosttimeline.py",
+        "matches": true,
+        "sha256": "02b01c82c4d07856dc647ee54302482365837ba290e02d22e1c48de7ad180e08"
+      },
+      {
+        "path": "models/hosttimelineevent.py",
+        "matches": true,
+        "sha256": "fcfae3896e443bbfe78de6c4aef2c5fd7aa6daba068981bc759b806167a8afb4"
+      },
+      {
+        "path": "models/responseenvelopecertificateasset.py",
+        "matches": true,
+        "sha256": "2e37f3181f05c2f2c46afc61d3f8b2705aad5d866493d637869855c985a7efea"
+      },
+      {
+        "path": "models/responseenvelopehostasset.py",
+        "matches": true,
+        "sha256": "ab0dea6146518e57704d36bc5b856f572f2af16525658f7af65c51340293cd9c"
+      },
+      {
+        "path": "models/responseenvelopehosttimeline.py",
+        "matches": true,
+        "sha256": "08a0a6fc8c8d3c86fe87b012cc1675a6a4ac17d30bc74f2a77773cb8a014f931"
+      },
+      {
+        "path": "models/responseenvelopesearchqueryresponse.py",
+        "matches": true,
+        "sha256": "a9f5bf34353b8f6d97b2db0e3fc04dcdfb8c981baeb14912e9e2670cb8d277ad"
+      },
+      {
+        "path": "models/responsevalidationerror.py",
+        "matches": true,
+        "sha256": "c670adaa4f0f48e7e682f04cf80157e8adddd7ed6add83d51ed82df40a3c0d78"
+      },
+      {
+        "path": "models/sdkbaseerror.py",
+        "matches": true,
+        "sha256": "1ba59b858b14cf2825addb03e78463537a39e42679ec792e63407e33e6c22525"
+      },
+      {
+        "path": "models/searchqueryinputbody.py",
+        "matches": true,
+        "sha256": "c6578b1a76b6a6a20abedfd07723020e66dab2b10241983d858231e015ac0541"
+      },
+      {
+        "path": "models/searchqueryresponse.py",
+        "matches": true,
+        "sha256": "28e4cf56578a955d913991376370825536c51065edbda3648179f3950803c6f5"
+      },
+      {
+        "path": "sdk.py",
+        "matches": true,
+        "sha256": "211183eb9c0ac66d702d1112a1f7490f5dee61a3205dd940c5bed0ec84543ddf"
+      },
+      {
+        "path": "types/basemodel.py",
+        "matches": true,
+        "sha256": "3142c3572c12571474968f21e703275e79011572cae435e604a0f57970152a01"
+      },
+      {
+        "path": "utils/retries.py",
+        "matches": true,
+        "sha256": "4eee8ee641472e53e3f1f5f3077c56057db051ab30bc0219a81ee8eb530c27e5"
+      }
+    ]
+  }
+}

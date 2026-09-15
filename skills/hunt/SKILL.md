@@ -19,6 +19,8 @@ When the user asks to evaluate the bundled benchmarks, call `evaluate_benchmarks
 
 ## Investigate
 
+For Censys operation choice, history/search continuation, or source gaps, read [the Censys guide](references/censys.md); follow its method-specific documentation links only when that branch needs upstream contract details.
+
 1. Read `playbooks` and `provider_operations` before choosing provider operations. For a resumed hunt, use `case_list` and `case_read` to identify the retained case. For a new hunt, create a case with the user's hypothesis, seeds, time window, and limits. Ask only for essential scope that cannot be inferred. Use only user-specified limits; an unset limit does not impose a hidden numeric budget. Respect existing case limits when resuming.
 2. Use native Codex subagents in this session for independent investigation branches and a separate evidence reviewer. Give each agent the absolute workspace, case ID, scoped hypothesis, branch, and remaining shared allowance; each first calls `hunting_setup` with the same workspace. Native subagents inherit the plugin. Keep their work bounded and wait for their results before settling their branches. If native delegation is unavailable, report that limitation and keep any coordinator self-review explicitly identified.
 3. Submit existing-observation lookups through `query_submit`, then inspect `job_read` and `case_read`. Provider operations and schemas are the allowlist. Never use shell HTTP calls, direct target requests, fresh scans, or a second provider client to bypass it. All agents share the case's query budget. API requests and credits with unknown accounting remain unknown; do not reinterpret a query limit as an exact API-request limit.
