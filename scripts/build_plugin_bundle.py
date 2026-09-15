@@ -1,4 +1,4 @@
-"""Build the checked-in Git marketplace package; end users use native Codex installation."""
+"""Build the checked-in Git marketplace package for Codex and Claude Code."""
 
 from __future__ import annotations
 

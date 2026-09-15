@@ -19,6 +19,7 @@ from typing import Any, Protocol
 PLUGIN = "threat-hunting-harness"
 TOP_LEVEL = (
     ".codex-plugin/plugin.json",
+    ".claude-plugin/plugin.json",
     ".mcp.json",
     ".env.example",
     "pyproject.toml",

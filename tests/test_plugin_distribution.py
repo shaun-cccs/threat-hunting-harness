@@ -21,7 +21,15 @@ def test_marketplace_bundle_matches_sources(monkeypatch):
     target = ROOT / entry["source"]["path"]
     manifest = json.loads((target / ".codex-plugin/plugin.json").read_text())
     assert manifest["name"] == entry["name"] == "threat-hunting-harness"
+    claude_catalog = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+    claude_entry = claude_catalog["plugins"][0]
+    claude_target = ROOT / claude_entry["source"]
+    claude_manifest = json.loads((claude_target / ".claude-plugin/plugin.json").read_text())
+    assert claude_target == target
+    assert claude_manifest["name"] == claude_entry["name"] == manifest["name"]
     assert bundle.build(ROOT, check=True) == []
+    assert not (target / ".claude-plugin/marketplace.json").exists()
+    assert not (target / ".claude").exists()
     assert not (target / "scripts/install_plugin.py").exists()
     assert not (target / ".env").exists()
     assert not (target / "artifacts").exists()

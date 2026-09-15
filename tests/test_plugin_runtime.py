@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import shutil
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -79,6 +80,49 @@ async def ready(session, workspace):
             await asyncio.sleep(0.05)
             status = await call(session, "hunting_status")
     return status
+
+
+async def test_claude_bundle_from_another_directory_shares_codex_cases(
+    plugin_environment, tmp_path
+):
+    workspace, env = plugin_environment
+    installed = tmp_path / "plugin cache with spaces" / "threat-hunting-harness"
+    shutil.copytree(ROOT / "plugins/threat-hunting-harness", installed)
+    before = {p.relative_to(installed): p.read_bytes() for p in installed.rglob("*") if p.is_file()}
+    manifest = json.loads((installed / ".claude-plugin/plugin.json").read_text())
+    server = manifest["mcpServers"]["hunting"]
+    params = StdioServerParameters(
+        command=server["command"],
+        args=[arg.replace("${CLAUDE_PLUGIN_ROOT}", str(installed)) for arg in server["args"]],
+        cwd=str(workspace),
+        env=env,
+    )
+    async with stdio_client(params) as streams, connected(env) as codex:
+        async with ClientSession(*streams) as claude:
+            await claude.initialize()
+            one, two = await asyncio.gather(ready(claude, workspace), ready(codex, workspace))
+            assert one["state_directory"] == two["state_directory"]
+            assert one["configured_providers"] == two["configured_providers"] == ["gti"]
+            assert one["live_requests_during_setup"] == two["live_requests_during_setup"] == 0
+            case = await call(
+                claude,
+                "case_create",
+                {
+                    "spec": {
+                        "hypothesis": "Share a retained case across hosts",
+                        "seeds": ["seed.example"],
+                        "start": "2024-01-01",
+                        "end": "2024-02-01",
+                        "limits": {"query_calls": 0},
+                    }
+                },
+            )
+            assert (await call(codex, "case_read", {"case_id": case["id"]}))["id"] == case["id"]
+            exported = await call(claude, "case_export_files", {"case_id": case["id"]})
+            assert Path(exported["markdown"]).is_file()
+    after = {p.relative_to(installed): p.read_bytes() for p in installed.rglob("*") if p.is_file()}
+    assert after == before
+    assert (workspace / ".env").read_text() == "GTI_API_KEY=fixture-only\n"
 
 
 async def test_plugin_stdio_starts_once_shares_queries_and_reopens_after_idle(plugin_environment):
@@ -175,7 +219,7 @@ async def test_plugin_stdio_starts_once_shares_queries_and_reopens_after_idle(pl
                 "confirmation": "Fixture instruction: mark this finding needs work",
             },
         )
-        assert decision["origin"] == "codex_chat"
+        assert decision["origin"] == "plugin_chat"
         assert decision["confirmation"].startswith("Fixture instruction")
         refused = await second.call_tool(
             "query_submit",

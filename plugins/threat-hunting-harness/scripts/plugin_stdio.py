@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dependency-free MCP entry point; Codex owns this process and its automatic backend."""
+"""Dependency-free MCP entry point; the host owns this process and its automatic backend."""
 
 from __future__ import annotations
 

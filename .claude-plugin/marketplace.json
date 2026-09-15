@@ -1,0 +1,15 @@
+{
+  "name": "threat-hunting",
+  "owner": {
+    "name": "Threat Hunting Harness contributors"
+  },
+  "description": "Threat hunting with retained evidence and shared investigation state.",
+  "plugins": [
+    {
+      "name": "threat-hunting-harness",
+      "source": "./plugins/threat-hunting-harness",
+      "description": "Resumable threat hunts with automatic provider setup and retained evidence.",
+      "category": "productivity"
+    }
+  ]
+}

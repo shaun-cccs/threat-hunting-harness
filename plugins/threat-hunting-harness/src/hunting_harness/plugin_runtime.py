@@ -1,4 +1,4 @@
-"""Private, automatically managed backend for the installed Codex plugin."""
+"""Private, automatically managed backend shared by the installed plugins."""
 
 import argparse
 import asyncio
@@ -82,7 +82,7 @@ def configure_tools(mcp: FastMCP, gateway: Gateway, workspace: Path, state: Path
 
         def record_confirmation(case: Record) -> Record:
             result = analysis.decide(case, finding_id, decision, rationale)
-            result.update(confirmation=confirmation, origin="codex_chat")
+            result.update(confirmation=confirmation, origin="plugin_chat")
             return result
 
         return gateway.store.change(case_id, record_confirmation)

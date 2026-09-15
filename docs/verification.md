@@ -2,6 +2,43 @@
 
 Checks on 2026-09-14 used Python 3.12.3 on Linux. Live provider credentials were loaded from the ignored `.env` file. Account responses and raw case evidence remain in ignored local artifacts.
 
+## Claude Code plugin installation (2026-09-15)
+
+Claude Code 2.1.269 installed the local repository marketplace and its plugin using
+an isolated `CLAUDE_CONFIG_DIR`. The check ran from a separate investigation
+directory and left the user's normal Claude configuration unchanged:
+
+```bash
+claude plugin marketplace add /absolute/path/to/threat-hunting-harness
+claude plugin install threat-hunting-harness@threat-hunting
+claude plugin details threat-hunting-harness@threat-hunting
+claude mcp list
+```
+
+The installed component inventory contained the `hunt` skill and one `hunting`
+MCP server. The native health check reported
+`plugin:threat-hunting-harness:hunting` connected, using the absolute script path
+from the Claude manifest instead of the relative Codex launcher configuration.
+Strict Claude validation passed for both the marketplace and bundled plugin;
+Codex plugin validation and shared skill validation also passed.
+
+The full suite passed **137 tests**. Ruff, strict mypy across 27 source files,
+bundle consistency, and `git diff --check` passed. The test run reported the two
+existing upstream Starlette/AnyIO deprecation warnings.
+
+The runtime regression test copies the bundle to a path containing spaces,
+launches the Claude manifest's command from another workspace, and initializes
+the shared backend through the MCP SDK. A simultaneous Codex-style connection
+reads the same case; the Claude-style connection exports it. The test verifies
+that setup makes zero provider requests, the investigation `.env` is preserved,
+and runtime use leaves the installed bundle unchanged. Provider runtime paths
+are injected fixtures, so this test does not download dependencies.
+
+These checks made no live provider or model calls. They verify native local
+installation, skill discovery, MCP connectivity, and shared runtime behavior.
+Remote GitHub installation of this change and a Claude model-driven hunt with
+native subagent review have not been run.
+
 ## Censys SDK migration (2026-09-15)
 
 The `debug/censys-history` worktree replaces the provider-owned Censys MCP
