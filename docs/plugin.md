@@ -56,7 +56,7 @@ In Codex, run `codex plugin marketplace upgrade threat-hunting`, then `codex plu
 
 If migrating from the earlier personal installation, install the Git version first, then run `codex plugin remove threat-hunting-harness@personal` to avoid two copies exposing the same tools. Provider `.env` and case storage are unaffected. `scripts/install_plugin.py` remains available for local development; unlike native installation, that helper explicitly configures scoped tool policies through Codex's API.
 
-If preparation fails, ask the hunt skill for status. Setup failures include a diagnostic log path; successful setup reports which providers are configured. Correct `.env` in the reported workspace and invoke the skill again. GreyNoise's previously tested credentials returned HTTP 401; successful installation cannot correct provider account access.
+If preparation fails, ask the hunt skill for status. Setup failures include a diagnostic log path; successful setup reports which providers are configured. Correct `.env` in the reported workspace and invoke the skill again. Earlier versions checked GreyNoise at `/v3/user`, which returned HTTP 401 even with valid credentials. The check now uses `/v1/account`, verified with HTTP 200 using the same key. After updating, ask the hunt skill to refresh live connectivity results to replace a cached failure.
 
 The plugin controls its own provider operations and query accounting. It does not establish an operating-system network boundary around the host's other tools. Tests and native installation checks are described in [verification](verification.md); synthetic fixtures do not establish campaign-detection performance or real analyst acceptance.
 

@@ -19,6 +19,44 @@ KEYS = {
 }
 
 
+@pytest.mark.parametrize("http_status", [200, 401, 403, 429])
+async def test_greynoise_authenticates_against_account_endpoint(tmp_path, monkeypatch, http_status):
+    requests = []
+    account = {"workspace_id": "private-workspace", "api_key": KEYS["GREYNOISE_API_KEY"]}
+
+    def respond(request):
+        requests.append(request)
+        assert request.method == "GET"
+        assert request.url.host == "api.greynoise.io"
+        assert not request.url.query
+        assert request.headers["key"] == KEYS["GREYNOISE_API_KEY"]
+        # The old /v3/user check returned 401 even for valid credentials.
+        if request.url.path != "/v1/account":
+            return httpx.Response(401)
+        return httpx.Response(http_status, json=account)
+
+    client = httpx.AsyncClient
+    monkeypatch.setattr(
+        connections.httpx,
+        "AsyncClient",
+        lambda **options: client(transport=httpx.MockTransport(respond), **options),
+    )
+    report = await connections.validate_connections(
+        {"GREYNOISE_API_KEY": KEYS["GREYNOISE_API_KEY"]}, tmp_path
+    )
+    assert report["providers"]["greynoise"] == {
+        "status": "authenticated" if http_status == 200 else "not_validated",
+        "http_status": http_status,
+        "requests": 1,
+    }
+    assert len(requests) == 1
+    assert report["intelligence_queries"] == 0
+    retained = (tmp_path / "connections.json").read_text()
+    assert json.loads(retained) == report
+    for value in account.values():
+        assert value not in retained
+
+
 async def test_all_checks_start_concurrently_and_each_runs_once(tmp_path, monkeypatch):
     started = []
     metadata = []
@@ -80,7 +118,7 @@ async def test_all_checks_start_concurrently_and_each_runs_once(tmp_path, monkey
     assert len(metadata) == 2
     assert dict((url, (params, headers)) for url, params, headers in metadata) == {
         "https://www.virustotal.com/api/v3/users/me": (None, {"x-apikey": KEYS["VT_APIKEY"]}),
-        "https://api.greynoise.io/v3/user": (None, {"key": KEYS["GREYNOISE_API_KEY"]}),
+        "https://api.greynoise.io/v1/account": (None, {"key": KEYS["GREYNOISE_API_KEY"]}),
     }
     providers = report["providers"]
     assert providers["shodan"] == {"status": "authenticated", "http_status": 200, "requests": 1}

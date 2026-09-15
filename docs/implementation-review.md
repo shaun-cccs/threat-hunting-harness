@@ -25,7 +25,7 @@ The reviewer reported three defects, each reproduced offline:
 
 Resolution: the lifecycle fixes address the first two findings. Provider failures now carry observed accounting. A failure before tool dispatch records zero calls; a failure after dispatch retains one MCP call with unknown upstream accounting when results are unavailable. The gateway records this failure accounting and preserves unused call allowances.
 
-No concrete unrequested scope was found. GreyNoise authentication, unknown provider entitlements/costs, empirical performance thresholds, and OS-level client confinement remain explicitly documented validation limitations. Native Codex workflow execution subsequently passed its bounded synthetic check.
+No concrete unrequested scope was found. Unknown provider entitlements/costs, empirical performance thresholds, and OS-level client confinement remain explicitly documented validation limitations. The initial GreyNoise authentication limitation was resolved on 2026-09-15 by correcting its account-check endpoint; see [verification](verification.md). Native Codex workflow execution subsequently passed its bounded synthetic check.
 
 Follow-up review reproduced successful pagination recovery, preservation of restricted-record gaps, union of completed evidence scopes, and correct failure accounting before and after dispatch. The final offline suite passes all 78 tests; typechecking, Ruff, lock verification, and package builds also pass.
 

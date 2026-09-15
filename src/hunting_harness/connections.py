@@ -107,7 +107,8 @@ async def validate_connections(keys: dict[str, str], output: Path) -> Record:
     }
     endpoints = {
         "gti": ("GTI_API_KEY", "https://www.virustotal.com/api/v3/users/me", "x-apikey"),
-        "greynoise": ("GREYNOISE_API_KEY", "https://api.greynoise.io/v3/user", "key"),
+        # GreyNoise's account endpoint is v1, including for keys used with the v3 data API.
+        "greynoise": ("GREYNOISE_API_KEY", "https://api.greynoise.io/v1/account", "key"),
     }
     checks = [
         _metadata_check(
