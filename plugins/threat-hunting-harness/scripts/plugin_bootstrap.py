@@ -78,6 +78,7 @@ def _installer_env(root: Path, node_bin: Path | None = None) -> dict[str, str]:
         "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org",
         "NPM_CONFIG_AUDIT": "false",
         "NPM_CONFIG_FUND": "false",
+        "NODE_OPTIONS": "--use-system-ca",
         "NO_COLOR": "1",
         "CI": "true",
     }
