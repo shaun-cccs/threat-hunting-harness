@@ -155,6 +155,22 @@ def render(case: Record) -> Record:
         )
         if rationale:
             lines += ["  - Narrowing rationale: " + escaped(rationale)]
+        assessment = candidate.get("assessment") or {}
+        if assessment:
+            basis = assessment.get("basis", "uninspected")
+            lines += [
+                "  - Deferral basis: "
+                + escaped(basis)
+                + (" (open lead: deferred without inspection)" if basis == "uninspected" else "")
+            ]
+            if assessment.get("reopen_if"):
+                lines += ["  - Reopen if: " + escaped(assessment["reopen_if"])]
+            if assessment.get("zone_authority_signals"):
+                lines += [
+                    "  - Zone authority evidence retained: this candidate serves DNS or is named "
+                    "as a nameserver, so it is operator infrastructure rather than an answer "
+                    "inside a zone"
+                ]
         if candidate.get("expansion"):
             lines += [
                 "  - Expansion: "
@@ -166,6 +182,7 @@ def render(case: Record) -> Record:
 
     for heading, value in (
         ("Investigation branches", case["branches"]),
+        ("Coverage statements", case.get("coverage_statements", [])),
         ("Source gaps", case["source_gaps"]),
         ("Export gaps", case.get("export_gaps", [])),
         ("Analyst decisions", case["decisions"]),

@@ -162,7 +162,9 @@ async def _run(campaign: Record, fixture: Record, output: Path, mode: str) -> Re
                     )
                     job = await _query(investigator, case_id, seed, "host", {"ip": seed})
                     if mode == "coordinated" and job["status"] in ("completed", "partial"):
-                        state = await investigator.call("case_read", {"case_id": case_id})
+                        state = await investigator.call(
+                            "case_read", {"case_id": case_id, "view": "full"}
+                        )
                         fingerprints = sorted(
                             {
                                 fingerprint
@@ -204,7 +206,9 @@ async def _run(campaign: Record, fixture: Record, output: Path, mode: str) -> Re
             async with replay_session(
                 cast(Starlette, app), "evidence-reviewer", transcript
             ) as reviewer:
-                evidence_state = await reviewer.call("case_read", {"case_id": case_id})
+                evidence_state = await reviewer.call(
+                    "case_read", {"case_id": case_id, "view": "full"}
+                )
                 for finding in findings:
                     evidence = [
                         e for e in evidence_state["evidence"] if e["id"] in finding["evidence_ids"]
@@ -248,7 +252,7 @@ async def _investigate(
     fingerprints: list[str],
     findings: list[Record],
 ) -> None:
-    state = await session.call("case_read", {"case_id": case_id})
+    state = await session.call("case_read", {"case_id": case_id, "view": "full"})
     for candidate in state["candidates"]:
         value = candidate["indicator"]
         if value in campaign["seeds"] or candidate.get("assessment") or candidate.get("expansion"):
@@ -265,8 +269,18 @@ async def _investigate(
                 "candidate_defer",
                 {
                     "case_id": case_id,
-                    "candidate": value,
-                    "rationale": "No distinctive dated fingerprint linking to seed observations",
+                    "deferral": {
+                        "candidate": value,
+                        "rationale": (
+                            "Inspected retained observations: no distinctive dated fingerprint "
+                            "links this candidate to the seed"
+                        ),
+                        "basis": "out_of_scope",
+                        "basis_evidence_ids": list(candidate["evidence_ids"]),
+                        "reopen_if": (
+                            "A dated distinctive fingerprint is retained for this candidate"
+                        ),
+                    },
                 },
             )
             continue

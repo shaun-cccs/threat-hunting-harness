@@ -2,12 +2,15 @@
 
 import hashlib
 import json
+import re
 from copy import deepcopy
 from datetime import datetime
 from typing import cast
 from uuid import uuid4
 
 from .models import Claim, Expansion, Record, Review, now
+
+NAMESERVER = re.compile(r"^(?:ns|dns|nameserver)[0-9]*\.", re.IGNORECASE)
 
 
 def candidate(case: Record, value: str) -> Record:
@@ -24,6 +27,39 @@ def evidence_for(case: Record, value: str, ids: list[str]) -> list[Record]:
     return [e for e in case["evidence"] if e["id"] in ids]
 
 
+def zone_authority_evidence(case: Record, value: str) -> list[Record]:
+    """Retained signals that a candidate *serves* a zone rather than merely resolving under one.
+
+    A host answering DNS, or named as a nameserver, is operator-controlled infrastructure. A
+    host that only appears as an answer inside a zone may be a wildcard artefact. The two must
+    never share a disposition, so this is checked before any narrowing is allowed to stand.
+    """
+    retained = candidate(case, value)
+    ids = set(retained["evidence_ids"])
+    signals: list[Record] = []
+
+    def walk(node: object, evidence_id: str) -> None:
+        if isinstance(node, dict):
+            port, protocol = node.get("port"), str(node.get("protocol", "")).upper()
+            if port == 53 or protocol == "DNS":
+                signals.append({"evidence_id": evidence_id, "signal": "serves_dns", "port": port})
+            for name in node.get("names", []) or []:
+                if isinstance(name, str) and NAMESERVER.match(name):
+                    signals.append(
+                        {"evidence_id": evidence_id, "signal": "nameserver_name", "name": name}
+                    )
+            for child in node.values():
+                walk(child, evidence_id)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child, evidence_id)
+
+    for item in case["evidence"]:
+        if item["id"] in ids:
+            walk(item.get("raw"), item["id"])
+    return signals
+
+
 def observed_date(evidence: Record) -> str | None:
     """Only a parseable source observation date can support a temporal claim."""
     value = evidence.get("observed_at")
@@ -36,7 +72,11 @@ def observed_date(evidence: Record) -> str | None:
 
 
 def independent_origins(evidence: list[Record]) -> int:
-    """Collapse copied records and explicit shared source identities across providers."""
+    """Collapse copied records, shared source identities, and records from one provider call.
+
+    Several records returned by a single query are one origin, not several: they share the
+    provider, the call and its coverage. Counting them separately inflates corroboration.
+    """
     groups: list[set[str]] = []
     for item in evidence:
         keys = {
@@ -44,6 +84,7 @@ def independent_origins(evidence: list[Record]) -> int:
         }
         if item.get("source_id"):
             keys.add("source:" + item["source_id"])
+        keys |= {"query:" + query_id for query_id in item.get("query_ids", [])}
         overlapping = [group for group in groups if group & keys]
         for group in overlapping:
             groups.remove(group)

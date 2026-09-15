@@ -26,6 +26,7 @@ Verify each field against the relevant saved catalog: [host](censys-query/querya
 - Use supported regex syntax. Inline flags such as `(?i)` and unescaped quotes have produced misleading empty results. Express case alternatives with character classes and escape literal markup characters. Remember that a query string encoded in JSON has an additional escaping layer.
 - Quote CIDRs and specify the field, for example `host.ip="192.0.2.0/24"`. A fieldless quoted CIDR searches text. An exact stored BGP-prefix value answers a different question from IP membership in a subnet.
 - Preserve the favicon hash algorithm. `host.services.endpoints.http.favicons.hash_shodan` corresponds to Shodan's `http.favicon.hash`; quote its signed decimal value in CenQL, including the minus sign. A SHA-256 hash is a different value and cannot be substituted into the mmh3 field.
+- Read TLS subject, issuer and `fingerprint_sha256` on every host you intend to dispose of. Default certificate fields are among the cheapest tool-identity signals available, and a generated certificate carrying a tool's default organization with the host's own address as its common name is host-unique in fingerprint but operator-agnostic in pattern: it identifies the software, and links nothing to any other deployment using the same defaults.
 - Check software, hardware and OS tags and decoded `host.services.protocol` fields. Inspect available `evidence[].data_path` on tags to understand the originating observation. A default protocol configuration identifies technology until other evidence gives it campaign significance.
 - Version text comparisons can be lexicographic: `7.4.10` can sort before `7.4.2`. Enumerate observed versions when needed instead of assuming semantic-version range ordering. A version constraint also excludes unknown versions.
 
@@ -57,6 +58,12 @@ Boundary overlap may repeat an observation because SDK datetimes have microsecon
 The number of events does not establish completion: an observed 99-event page still had older history to fetch. Completion depends on progress toward the requested lower bound and the gateway's validation of that progress. Repeated or malformed bounds are source gaps. An accepted 90-day request that returns recent events does not establish 90-day coverage or entitlement.
 
 For search, the continuation carries `next_page_token` forward as `page_token`. A missing or unusable paging marker is not proof that all matches were retrieved.
+
+## Read a projected result as a view, not a record
+
+A search that sets `fields` returns only the fields you named. Everything else is absent because you did not ask for it, not because the host lacks it — and nothing downstream can tell those apart. Certificates, decoded protocol configuration, tags and DNS records all disappear silently from a projection.
+
+So a projected row is enough to triage and to page, and never enough to dispose of a host. Before selecting a candidate, deferring one into a named class, or recording any negative about it, retrieve it unprojected with `get_host`. The same applies to searching retained artefacts locally: grepping a projected payload for a certificate subject returns a guaranteed absence that carries no information. Record the projection as a limitation on any claim that rests on one, and treat a host you only ever saw projected as uninspected.
 
 ## Interpret evidence and gaps
 

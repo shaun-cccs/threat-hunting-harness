@@ -317,3 +317,100 @@ async def test_completed_scoped_branches_jointly_cover_candidate_without_hiding_
         retained = gateway.case_read(case["id"])
         assert retained["branches"][0]["id"] == first_branch["id"]
         assert retained["branches"][0]["completed_evidence_ids"] == [candidate["evidence_ids"][0]]
+
+
+def _deferrable(tmp_path, raw):
+    """A case holding one non-seed candidate with one retained evidence record."""
+    gateway = Gateway(tmp_path)
+    case = gateway.case_create(case_spec())
+    evidence = {
+        "id": "e1",
+        "raw": raw,
+        "provider": "fixture",
+        "query_ids": ["q1"],
+        "retrieved_at": "2026-01-05T00:00:00+00:00",
+        "observed_at": "2026-01-05T00:00:00+00:00",
+        "indicators": ["192.0.2.9"],
+    }
+    candidate = {
+        "indicator": "192.0.2.9",
+        "selected": False,
+        "evidence_ids": ["e1"],
+        "pivot_paths": [],
+        "needs_assessment": True,
+    }
+
+    def seed(record):
+        record["evidence"].append(evidence)
+        record["candidates"].append(candidate)
+        return record
+
+    gateway.store.change(case["id"], seed)
+    return gateway, case
+
+
+def test_uninspected_deferral_is_an_open_lead_rather_than_a_disposition(tmp_path):
+    from hunting_harness.models import Deferral
+
+    gateway, case = _deferrable(tmp_path, {"services": [{"port": 443, "protocol": "HTTP"}]})
+    gateway.candidate_defer(
+        case["id"], Deferral(candidate="192.0.2.9", rationale="Nothing flagged it")
+    )
+    settled = gateway.hunt_settle(case["id"])
+    assert settled["status"] == "paused"
+    assert settled["open_questions"]["uninspected_deferrals"] == ["192.0.2.9"]
+    assert "deferred without being inspected" in settled["reason"]
+    assert gateway.case_read(case["id"])["status_summary"]["deferral_bases"]["uninspected"] == 1
+
+
+def test_inspected_deferral_with_cited_evidence_lets_a_hunt_complete(tmp_path):
+    from hunting_harness.models import Deferral
+
+    gateway, case = _deferrable(tmp_path, {"services": [{"port": 443, "protocol": "HTTP"}]})
+    gateway.candidate_defer(
+        case["id"],
+        Deferral(
+            candidate="192.0.2.9",
+            rationale="Inspected: default banner, explained by prevalence",
+            basis="prevalence",
+            basis_evidence_ids=["e1"],
+            reopen_if="A distinctive dated observation is retained",
+        ),
+    )
+    settled = gateway.hunt_settle(case["id"])
+    assert settled["status"] == "completed"
+    assert settled["open_questions"]["uninspected_deferrals"] == []
+
+
+def test_conclusive_deferral_basis_requires_retained_evidence(tmp_path):
+    from hunting_harness.models import Deferral
+
+    with pytest.raises(ValueError, match="conclusive deferral basis needs retained evidence"):
+        Deferral(candidate="192.0.2.9", rationale="Common technology", basis="prevalence")
+
+
+def test_deferring_zone_authority_evidence_cannot_settle_a_hunt(tmp_path):
+    from hunting_harness.models import Deferral
+
+    gateway, case = _deferrable(
+        tmp_path,
+        {
+            "services": [{"port": 53, "protocol": "DNS"}],
+            "dns": {"names": ["ns1.example.com"]},
+        },
+    )
+    gateway.candidate_defer(
+        case["id"],
+        Deferral(
+            candidate="192.0.2.9",
+            rationale="Looks like consumer CPE",
+            basis="out_of_scope",
+            basis_evidence_ids=["e1"],
+        ),
+    )
+    settled = gateway.hunt_settle(case["id"])
+    assert settled["status"] == "paused"
+    assert settled["open_questions"]["zone_authority_deferrals"] == ["192.0.2.9"]
+    assert "zone-authority evidence" in settled["reason"]
+    signals = gateway.case_read(case["id"])["candidates"][0]["assessment"]["zone_authority_signals"]
+    assert {s["signal"] for s in signals} == {"serves_dns", "nameserver_name"}

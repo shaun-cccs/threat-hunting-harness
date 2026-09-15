@@ -3,7 +3,7 @@ import pytest
 from test_queries import case_spec, finished
 
 from hunting_harness.gateway import Gateway
-from hunting_harness.models import Expansion, QuerySpec
+from hunting_harness.models import Deferral, Expansion, QuerySpec
 from hunting_harness.providers.shodan import Shodan
 from hunting_harness.shodan_fixture import ShodanFixtureTransport
 
@@ -101,7 +101,18 @@ async def test_pagination_retains_both_pages_and_resolves_gap_without_duplicate_
         )
         first_job = await gateway.query_submit(case["id"], query)
         first_job = await finished(gateway, case["id"], first_job["id"])
-        gateway.candidate_defer(case["id"], "192.0.2.2", "Weak service evidence")
+        weak = next(
+            c for c in gateway.case_read(case["id"])["candidates"] if c["indicator"] == "192.0.2.2"
+        )
+        gateway.candidate_defer(
+            case["id"],
+            Deferral(
+                candidate="192.0.2.2",
+                rationale="Inspected: weak service evidence, explained by common technology",
+                basis="prevalence",
+                basis_evidence_ids=weak["evidence_ids"],
+            ),
+        )
         assert gateway.hunt_settle(case["id"])["status"] == "paused"
         gateway.case_resume(case["id"], refresh=True)
         continuation = query.model_copy(
@@ -109,7 +120,18 @@ async def test_pagination_retains_both_pages_and_resolves_gap_without_duplicate_
         )
         last = await gateway.query_submit(case["id"], continuation)
         await finished(gateway, case["id"], last["id"])
-        gateway.candidate_defer(case["id"], "192.0.2.3", "Missing dates")
+        undated = next(
+            c for c in gateway.case_read(case["id"])["candidates"] if c["indicator"] == "192.0.2.3"
+        )
+        gateway.candidate_defer(
+            case["id"],
+            Deferral(
+                candidate="192.0.2.3",
+                rationale="Inspected: retained observations carry no usable dates",
+                basis="out_of_scope",
+                basis_evidence_ids=undated["evidence_ids"],
+            ),
+        )
         assert gateway.hunt_settle(case["id"])["status"] == "completed"
         gateway.case_resume(case["id"], refresh=True)
         refreshed = await gateway.query_submit(
