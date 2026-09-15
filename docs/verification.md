@@ -2,6 +2,20 @@
 
 Checks on 2026-09-14 used Python 3.12.3 on Linux. Live provider credentials were loaded from the ignored `.env` file. Account responses and raw case evidence remain in ignored local artifacts.
 
+## Installed Codex plugin
+
+The plugin workflow replaces manual gateway/client startup. Checks on 2026-09-14–15 used Codex CLI 0.154.0 and the installed personal-marketplace bundle on Linux x86_64. Codex launched the stdio entry point, which prepared its own pinned Python, GTI, Node, and GreyNoise dependencies from a cold cache. The installed bundle was independent of the development virtual environment. A warm preparation reused the completed runtime.
+
+A native Codex session, with no per-run tool-policy overrides or manually started service, created one case with a zero-query limit. Exactly one native subagent initialized the same workspace and read the same case and allowance. The retained branch remained waiting, settlement returned `paused`, and Markdown, JSON, and CSV files were exported. Parent/child session records verify delegation and the child's actual case read; the model's final message alone is not the verification. This fixture made zero provider queries and recorded no findings or analyst decisions.
+
+The reproducible developer check is `python scripts/verify_plugin.py --output artifacts/native-plugin-check` after installation. The successful run and sanitized delegation evidence are retained locally under `artifacts/native-plugin-verified/`. This checks plugin setup, shared state, delegation, and exports. The earlier synthetic Shodan workflow below separately checks reviewed findings.
+
+The installed plugin also loaded the original workspace's `.env`, detected all four configured providers, and reported zero requests during setup/configuration inspection. Its `evaluate_benchmarks` tool successfully ran the bundled offline corpus and wrote evaluation artifacts with zero live provider requests. No additional live authentication or intelligence calls were made for plugin verification; the previously observed GreyNoise HTTP 401 remains unresolved.
+
+Runtime tests exercise real stdio processes and an automatically started backend: concurrent clients share query deduplication and limits, cases survive idle shutdown, credentials reload after editing `.env`, and plugin upgrades replace the service without discarding cases. Failure tests cover interrupted preparation, configuration errors, retry, and connection-check serialization. Bootstrap and installer tests check package integrity, credential isolation, preserved user files/settings, and scoped tool policies. The final suite passed **107 tests**; strict mypy, Ruff, lock validation, source/wheel builds, and plugin/skill validation passed. Two upstream Starlette test-client deprecation warnings remain.
+
+The installer uses Codex's configuration API to approve only the 21 bundled named tools and preserve explicit existing tool settings; unknown tools retain the default prompt policy. Reinstallation preserved all 21 existing policies. A bundle scan confirmed that none of the workspace credential values entered its 50 allowlisted files. Analyst confirmation is a retained chat audit record, not authentication of a human identity. OS/network confinement of Codex's other tools remains unverified. macOS and ARM64 package pins are present, but the native check ran only on Linux x86_64.
+
 ## Limited live checks
 
 | Provider | Check | Result | Recorded usage |

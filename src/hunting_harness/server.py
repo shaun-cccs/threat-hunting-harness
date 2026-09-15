@@ -1,7 +1,7 @@
 """Authenticated loopback Streamable HTTP MCP transport."""
 
 import hmac
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -34,7 +34,12 @@ class BearerAuth:
         await self.app(scope, receive, send)
 
 
-def create_app(root: Path, token: str, providers: dict[str, Provider] | None = None) -> BearerAuth:
+def create_app(
+    root: Path,
+    token: str,
+    providers: dict[str, Provider] | None = None,
+    configure: Callable[[FastMCP, Gateway], None] | None = None,
+) -> BearerAuth:
     gateway = Gateway(root, providers)
     mcp = FastMCP(
         "Threat hunting",
@@ -76,6 +81,8 @@ def create_app(root: Path, token: str, providers: dict[str, Provider] | None = N
         gateway.case_export,
     ):
         mcp.add_tool(method)
+    if configure is not None:
+        configure(mcp, gateway)
     app = mcp.streamable_http_app()
     transport_lifespan = app.router.lifespan_context
 

@@ -1,108 +1,54 @@
-# Threat-hunting harness
+# Threat Hunting for Codex
 
-A local, authenticated MCP gateway for resumable threat hunts in Codex. Cases retain seeds, candidate infrastructure, source observations, query jobs, evidence reviews, analyst decisions, and exports. Provider adapters retrieve existing observations only.
+A Codex plugin for resumable threat investigations. Install it once, fill in your workspace's `.env`, and use **`$hunt` in your existing Codex conversation**. The plugin prepares its dependencies, connects available providers, retains evidence, coordinates native Codex agents, and writes reports automatically.
 
-## Install
+## Install once
 
-Python 3.11+ and [uv](https://docs.astral.sh/uv/) are recommended:
-
-```bash
-git clone https://github.com/shaun-cccs/threat-hunting-harness.git
-cd threat-hunting-harness
-uv sync --locked
-```
-
-Alternatively, create a Python virtual environment and run `python -m pip install -e .` inside it. Development checks additionally need pytest, pytest-asyncio, mypy, ruff, and types-jsonschema. Commands below use `uv run`; an activated environment can invoke `hunt` directly.
-
-Keep credentials in an ignored `.env` file using the names in [.env.example](.env.example). Provider setup and exact operation allowlists are documented in [providers](docs/providers.md).
-
-## Start a gateway
+With Codex and Python 3.9+ available on Linux or macOS, run this from the downloaded repository:
 
 ```bash
-uv run hunt --state cases serve
+python3 scripts/install_plugin.py
 ```
 
-The MCP endpoint is `http://127.0.0.1:8765/mcp`. Its bearer token is generated in `cases/gateway.token` with owner-only permissions. Provider lookups are disabled unless the trusted analyst starts the gateway with `--enable-lookups`:
+The installer registers the plugin in your personal marketplace and installs it through Codex. Start a new Codex conversation in the folder where you want to investigate.
 
-```bash
-uv run hunt --state cases serve --enable-lookups --env-file .env
+Installation configures approval for the plugin's named tools through Codex's API. Existing explicit tool choices and host restrictions remain in effect; global settings and other plugins are unchanged.
+
+Fill in `.env` in that folder using the keys in [.env.example](.env.example). Leave unavailable providers blank. If the file is missing, `$hunt` creates a blank template and tells you where to edit it.
+
+```dotenv
+SHODAN_API_KEY=
+CENSYS_API_KEY=
+CENSYS_ORG_ID=
+GTI_API_KEY=
+GREYNOISE_API_KEY=
 ```
 
-Cases and source artifacts stay under `cases/`, outside tracked source. One worker owns each state directory; clients share that worker's jobs and limits. Queries are explicit jobs, and pagination and retries require explicit submissions. A restart records interrupted execution without silently replaying queries.
+Then ask Codex:
 
-## Create and inspect a case
-
-```bash
-uv run hunt create --hypothesis 'Related service fingerprints during the campaign' \
-  --seed 192.0.2.1 --start 2024-01-01 --end 2024-02-01 \
-  --limit query_calls=5 --limit api_requests=5
-uv run hunt status CASE_ID
-uv run hunt export CASE_ID --output artifacts/exports
+```text
+$hunt Check my provider configuration.
+$hunt Investigate <seed> for <hypothesis> during <date range>, using at most 5 queries.
+$hunt Resume my latest case and export the report.
+$hunt Evaluate the bundled benchmarks.
 ```
 
-Limits are optional and shared across callers. Unset limits impose no numeric hunt budget. An adapter rejects limits it cannot enforce; unknown upstream requests and credits remain unknown. Creating or reading a case does not query a provider. The documentation IP above is for offline examples.
+That is the complete setup. Runtime preparation happens on first use and may take a few minutes while dependencies download. Codex reports progress in the same conversation. Investigators and the evidence reviewer run as native Codex agents; the shared case service starts automatically in the background.
 
-## Connect an agent client
+## Evidence and limits
 
-Use a dedicated directory outside this checkout so clients do not inherit provider credentials or benchmark answers:
+Provider adapters retrieve existing observations from Shodan, Censys, GTI/VirusTotal, and GreyNoise. All returned candidates remain in the case, including candidates excluded from further expansion. Historical association, current malicious use, and actor attribution remain separate claims. Reviewer assessments and your analyst decisions are recorded separately; accept, reject, or request more work in chat.
 
-```bash
-uv run hunt client prepare codex --workdir /tmp/hunt-codex
-uv run hunt client preflight codex --workdir /tmp/hunt-codex
-uv run hunt client launch codex --workdir /tmp/hunt-codex
-```
+Query limits are shared by every agent working on a case. Upstream API-request counts and credits remain unknown when the provider cannot report or enforce them. Pagination and refreshes are explicit, and interrupted queries are retained without silent replay. Configuration checks make no provider requests; ask `$hunt` to test live connectivity when needed.
 
-The launcher supplies the local gateway token through the child environment. [Client setup](docs/clients.md) distinguishes configuration verification, fixture workflow validation, and effective runtime controls. A successful configuration check alone is not proof of a restricted runtime. Claude profile scaffolding is retained, but its native workflow is deferred.
+Cases and exports persist outside the plugin installation and survive updates. Reports include evidence, source gaps, reviewer assessments, and recorded analyst decisions. See [plugin operation and troubleshooting](docs/plugin.md) for storage locations and lifecycle details.
 
-The coordinator, investigators, and evidence reviewer use the same gateway. Analyst decisions are recorded through the trusted CLI after review:
+## Verification and development
 
-```bash
-uv run hunt decide CASE_ID FINDING_ID accept --rationale 'Reviewed dated evidence supports association'
-```
+The installed plugin passed automatic first-use setup and a native Codex case/export workflow with zero provider queries. Its local tests cover shared limits, retained evidence, dependency preparation, configuration reload, and plugin updates. Live checks confirmed Shodan and GTI metadata access and the Censys inventory; GreyNoise returned HTTP 401. One Shodan host-report lookup was performed. [Verification](docs/verification.md) records the checks and their limits.
 
-## Verify connectivity with limited requests
+Use `$hunt Evaluate the bundled benchmarks` for an offline comparison of enrichment and coordinated workflows. Codex writes the evaluation report automatically. The bundled observations are synthetic; evaluation requires no provider credentials and makes no live provider or model calls.
 
-Inspect configuration without any network requests:
+The standalone gateway and client launchers remain available for development and compatibility; ordinary plugin use is entirely within Codex. See [legacy clients](docs/clients.md), [providers](docs/providers.md), and [evaluation](docs/evaluation.md). Developers can run `uv sync --locked`, `uv run pytest`, `uv run mypy src`, and `uv run ruff check src tests scripts` from a checkout.
 
-```bash
-uv run hunt connections
-```
-
-Perform account metadata checks and a Censys MCP inventory handshake, without indicator queries:
-
-```bash
-uv run hunt connections --live
-```
-
-A cached report is reused unless `--refresh` is specified. For an explicit, single Shodan host retrieval:
-
-```bash
-uv run hunt smoke --ip 1.1.1.1
-```
-
-The smoke command queries Shodan's existing report, never the IP itself. It uses one query and one API request, with no search, pagination, or retry. It retains its case and sanitized result under `artifacts/live-smoke/`. [Verification results](docs/verification.md) record actual checks separately from offline fixtures.
-
-## Tests and evaluation
-
-```bash
-uv run mypy src
-uv run ruff check src tests
-uv run pytest
-uv run hunt evaluate --output artifacts/evaluation
-```
-
-Evaluation and fixture commands preserve earlier runs. Choose a new output directory for each replay.
-
-For an opt-in native Codex check with an authenticated client, run `uv run python scripts/verify_codex.py --output artifacts/native-check`. It invokes the model against a local synthetic gateway capped at one query, without live provider access. The script returns a nonzero exit status when the retained case does not show a reviewed and settled workflow.
-
-[Evaluation](docs/evaluation.md) describes the documented campaign cases, private scoring answers, enrichment baseline, evidence paths, and retrospective leakage. Replay measurements do not establish live provider coverage or real analyst acceptance. Missing analyst assessments and provider costs remain unmeasured.
-
-## Design
-
-- [Domain glossary](CONTEXT.md)
-- [Harness design](docs/threat-hunting-design.md)
-- [Architectural decisions](docs/adr/)
-- [Provider research](docs/research/threat-intelligence-mcp.md)
-- [Client research](docs/research/agent-mcp-clients.md)
-
-Historical association, current malicious use, and actor attribution are separate claims. All retrieved candidates survive narrowing, including candidates left outside the expansion subset. Internal catalog integrations await defined tables and backend contracts.
+Design references: [domain glossary](CONTEXT.md), [harness design](docs/threat-hunting-design.md), and [architectural decisions](docs/adr/).
