@@ -238,7 +238,8 @@ def _build(
     _run(
         [
             uv, "export", "--frozen", "--extra", "gti", "--no-dev", "--no-emit-project",
-            "--no-emit-package", "gti-mcp", "--no-header", "--output-file", str(requirements),
+            "--no-emit-package", "gti-mcp", "--no-emit-package", "shodan",
+            "--no-header", "--output-file", str(requirements),
         ],
         project,
         env,
@@ -261,6 +262,20 @@ def _build(
         [
             uv, "pip", "install", "--python", paths["python"], "--no-deps", "--require-hashes",
             "--only-binary=:all:", "--requirements", str(build_requirements),
+        ],
+        root,
+        env,
+    )
+    # shodan ships no wheel for any release; build the pinned sdist against the wheels above.
+    source_requirements = project / "source-requirements.txt"
+    source_requirements.write_text(
+        "".join(f"{p['url']} --hash=sha256:{p['sha256']}\n" for p in pins["source_sdists"]),
+        encoding="utf-8",
+    )
+    _run(
+        [
+            uv, "pip", "install", "--python", paths["python"], "--no-deps", "--require-hashes",
+            "--no-build-isolation", "--requirements", str(source_requirements),
         ],
         root,
         env,
@@ -288,7 +303,7 @@ def _build(
     npm = [paths["node"], str(release / "node/lib/node_modules/npm/bin/npm-cli.js")]
     _run(npm + ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], greynoise, env)
     _run(npm + ["run", "build"], greynoise, env)
-    _run([paths["python"], "-c", "import mcp, httpx, gti_mcp.server"], root, env)
+    _run([paths["python"], "-c", "import mcp, httpx, shodan, gti_mcp.server"], root, env)
     _run([paths["node"], "--check", paths["greynoise"]], root, env)
     return paths
 

@@ -50,6 +50,12 @@
       "sha256": "708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248"
     }
   ],
+  "source_sdists": [
+    {
+      "url": "https://files.pythonhosted.org/packages/c5/06/c6dcc975a1e7d89bc764fd271da8138b318e18080b48e7f1acd2ab63df28/shodan-1.31.0.tar.gz",
+      "sha256": "c73275386ea02390e196c35c660706a28dd4d537c5a21eb387ab6236fac251f6"
+    }
+  ],
   "gti": {
     "url": "https://codeload.github.com/google/mcp-security/tar.gz/9885ec6856ec72333091cf1a3b2ac1bb26abe149",
     "sha256": "7d2f90688dbd75836251482df126dc517674002bceaf5ebabfe9bb41e0162109"
