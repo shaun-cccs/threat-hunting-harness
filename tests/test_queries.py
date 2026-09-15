@@ -52,7 +52,8 @@ async def test_query_retains_evidence_and_reopens_without_repeating_provider_req
         job = await gateway.query_submit(case["id"], query)
         assert (await finished(gateway, case["id"], job["id"]))["status"] == "completed"
     async with Gateway(tmp_path, {}) as gateway:
-        case = gateway.case_read(case["id"])
+        assert "raw" not in gateway.case_read(case["id"])["evidence"][0]
+        case = gateway.case_read(case["id"], view="full")
         assert case["evidence"][0]["raw"]["data"] == "banner"
         assert case["evidence"][0]["query_ids"] == [job["id"]]
         assert case["evidence"][0]["observed_at"] == "2024-01-03T00:00:00+00:00"

@@ -7,6 +7,7 @@ Use these techniques to turn retained seed observations into testable pivots. Ch
 | What can I pivot on? | [Inspect the seed](#inspect-the-seed) |
 | Does this signature find useful candidates? | [Test additions and misses](#test-additions-and-misses) |
 | Why are the matches noisy? | [Refine a signal](#refine-a-signal) |
+| Who controls this zone? | [Read zone authority](#read-zone-authority) |
 | Where does this redirect lead? | [Read directed relationships](#read-directed-relationships) |
 | Does an asset identify a build or kit? | [Compare artifacts](#compare-artifacts) |
 | Should this branch stop or reopen? | [Record the decision](#record-the-decision) |
@@ -55,6 +56,18 @@ A proxy or identity provider can be a useful gate but seldom establishes a campa
 
 **Continue when:** the refinement removes an understood false-positive class while retaining relevant examples. Reconsider the gate when it erases known matches. If the original pattern is already discriminating, an extra gate needs a demonstrated benefit.
 
+## Read zone authority
+
+**Trigger:** a domain pivot returned hosts, or a candidate resolves under a zone you did not register.
+
+Resolving *under* a zone and *serving* that zone are different relationships, and only one implies control. A wildcard zone answers every label, so a host that merely appears as an answer inside it may be a routing artefact, a rotation target, or an address the operator does not control at all. Test the zone for a wildcard before reading any co-resolution as a relationship: query a label nobody would have provisioned. If it answers, co-resolution establishes nothing on its own, however many hosts share the name.
+
+A host named in the zone's `NS` records, or answering DNS for it, is a different class. Serving a zone's authoritative DNS is operator-controlled infrastructure, whoever owns the address underneath. Before deferring any host in a domain-pivot result set, check it against the registry `NS` records and against its own services: a nameserver name or a DNS responder is never an end-user, CPE, or exit-node class, and must not be given that disposition.
+
+Read the registry epochs before carrying any of this backwards. A domain that lapsed and was re-registered has disjoint operators, and its earlier resolutions, certificates and provider first-seen dates belong to the prior registrant. State which epoch each artefact falls in.
+
+**Continue when:** you can say for each host whether it serves the zone, is served by it, or is an unrelated address the zone happens to name. Where a nameserver host has its own services, inspect them: authoritative DNS beside unexplained listeners is a question worth asking, not a coincidence to note.
+
 ## Read directed relationships
 
 **Trigger:** a stored redirect, form action or linked hostname supplies a lead, especially from sparse web content.
@@ -80,9 +93,11 @@ Keep frontend, backend, plugin and firmware versions separate. Search outside th
 Use branch rationale and retained evidence/query IDs to record the artifact, its role, the hypothesis tested, result coverage, alternatives and next action. These are analytical dispositions recorded in rationale, not new tool status values. Distinguish:
 
 - **Untested:** no valid observation answers the question yet; attach no invented count.
-- **Empirically negative within scope:** a valid query or inspected population failed the hypothesis for the recorded dates and coverage.
+- **Empirically negative within scope:** a valid query or inspected population failed the hypothesis for the recorded dates and coverage. A negative is only admissible when the retrieved records actually contained the fields in which the thing would have appeared. A projected search, a restricted entitlement, or a provider holding no record of the subject supplies no evidence about it: that is *untested*, whatever the response looked like. This applies to your own inspection of retained artefacts as much as to a provider response — searching a retained payload for a value the retrieval never requested returns a guaranteed absence that means nothing.
 - **Unsuitable for this role:** the signal was too broad for discovery or too restrictive as a gate; reconsider when its role changes.
 - **Waiting on a source gap:** the question remains unresolved because evidence or a required operation is unavailable.
+
+Narrowing carries the same burden as expansion. Deferring a candidate states which class it belongs to, the retained field evidence placing it there, and what would reopen it. A candidate you have not inspected is not explained by anything: record it as an open lead so it survives settling, and never let a provider's silence stand as the class evidence. Absence of detection corroborates at most; it closes nothing.
 
 Apply the existing candidate selection/defer and branch-state workflow. Provider agreement, tag agreement and reviewer agreement are not automatically independent evidence: check whether they share the same observation, detection rule or deployment artifact. Reconsider a role judgment within an active hunt when the role changes. To resume a settled case, follow the existing rules for new inputs or an explicit refresh.
 

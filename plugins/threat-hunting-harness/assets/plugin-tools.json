@@ -67,12 +67,39 @@
   },
   {
     "name": "case_read",
-    "description": "Read the retained case and recorded hunt status.",
+    "description": "Read the retained case and recorded hunt status.\n\n        The default view omits retained provider payloads so a grown case stays readable. Pass\n        section with offset to page one list, or view=\"full\" for whole records under a size\n        ceiling. Reading evidence raw payloads requires view=\"full\".\n        ",
     "inputSchema": {
       "properties": {
         "case_id": {
           "title": "Case Id",
           "type": "string"
+        },
+        "view": {
+          "default": "summary",
+          "title": "View",
+          "type": "string"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "offset": {
+          "default": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 50,
+          "title": "Limit",
+          "type": "integer"
         }
       },
       "required": [
@@ -298,26 +325,72 @@
   },
   {
     "name": "candidate_defer",
-    "description": "Defer expansion of a candidate with a rationale while preserving its evidence.",
+    "description": "Defer a candidate with its class, that class's evidence, and what would reopen it.\n\n        A deferral without cited evidence is recorded as `uninspected` and reported as an open\n        lead at settle: narrowing an unread candidate postpones the question, it does not answer it.\n        ",
     "inputSchema": {
+      "$defs": {
+        "Deferral": {
+          "additionalProperties": false,
+          "description": "Narrowing carries the same burden as expansion: a class, its basis, and a way back.",
+          "properties": {
+            "candidate": {
+              "title": "Candidate",
+              "type": "string"
+            },
+            "rationale": {
+              "minLength": 1,
+              "title": "Rationale",
+              "type": "string"
+            },
+            "basis": {
+              "default": "uninspected",
+              "enum": [
+                "prevalence",
+                "out_of_scope",
+                "uninspected"
+              ],
+              "title": "Basis",
+              "type": "string"
+            },
+            "basis_evidence_ids": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Basis Evidence Ids",
+              "type": "array"
+            },
+            "reopen_if": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Reopen If"
+            }
+          },
+          "required": [
+            "candidate",
+            "rationale"
+          ],
+          "title": "Deferral",
+          "type": "object"
+        }
+      },
       "properties": {
         "case_id": {
           "title": "Case Id",
           "type": "string"
         },
-        "candidate": {
-          "title": "Candidate",
-          "type": "string"
-        },
-        "rationale": {
-          "title": "Rationale",
-          "type": "string"
+        "deferral": {
+          "$ref": "#/$defs/Deferral"
         }
       },
       "required": [
         "case_id",
-        "candidate",
-        "rationale"
+        "deferral"
       ],
       "title": "candidate_deferArguments",
       "type": "object"
@@ -325,6 +398,54 @@
     "outputSchema": {
       "additionalProperties": true,
       "title": "candidate_deferDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "coverage_record",
+    "description": "Record what a source could and could not answer, without asserting a finding.\n\n        Non-detection belongs here. A provider that held no record of the subject supplies no\n        evidence about it, so this states which providers, fields and dates were actually\n        covered instead of letting silence read as a negative observation.\n        ",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "looked_at": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Looked At",
+          "type": "array"
+        },
+        "not_covered": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Covered",
+          "type": "array"
+        }
+      },
+      "required": [
+        "case_id",
+        "subject",
+        "question",
+        "looked_at",
+        "not_covered"
+      ],
+      "title": "coverage_recordArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "coverage_recordDictOutput",
       "type": "object"
     }
   },
@@ -420,6 +541,18 @@
               ],
               "default": null,
               "title": "Hypothesis"
+            },
+            "coverage": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Coverage"
             }
           },
           "required": [

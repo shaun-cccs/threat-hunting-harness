@@ -35,6 +35,14 @@ def indicator(value: str) -> str:
     return value
 
 
+NEGATION = re.compile(
+    r"\b(?:no|not|none|never|nothing|zero|without|absent|absence|lacks?|lacking"
+    r"|unsupported|undetected|un(?:at)?tested|fails? to|does ?n[o']t|is ?n[o']t"
+    r"|are ?n[o']t|was ?n[o']t|were ?n[o']t|cannot|can ?not)\b",
+    re.IGNORECASE,
+)
+
+
 class Input(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -114,6 +122,30 @@ class Expansion(Input):
         return indicator(value)
 
 
+class Deferral(Input):
+    """Narrowing carries the same burden as expansion: a class, its basis, and a way back."""
+
+    candidate: str
+    rationale: str = Field(min_length=1)
+    basis: Literal["prevalence", "out_of_scope", "uninspected"] = "uninspected"
+    basis_evidence_ids: list[str] = Field(default_factory=list)
+    reopen_if: str | None = None
+
+    @model_validator(mode="after")
+    def basis_supported(self) -> Self:
+        if self.basis in ("prevalence", "out_of_scope") and not self.basis_evidence_ids:
+            raise ValueError(
+                "A conclusive deferral basis needs retained evidence; "
+                "use basis 'uninspected' when the candidate was never read"
+            )
+        return self
+
+    @field_validator("candidate")
+    @classmethod
+    def candidate_valid(cls, value: str) -> str:
+        return indicator(value)
+
+
 class Claim(Input):
     candidate: str
     kind: Literal["relatedness", "historical_association", "current_malicious_use", "attribution"]
@@ -124,6 +156,19 @@ class Claim(Input):
     freshness_end: date | None = None
     attribution_basis: str | None = None
     hypothesis: str | None = None
+    coverage: str | None = None
+
+    @model_validator(mode="after")
+    def absence_is_not_a_claim(self) -> Self:
+        """Non-detection is a statement about coverage, never a finding about the world."""
+        if self.kind != "current_malicious_use":
+            return self
+        if NEGATION.search(self.statement):
+            raise ValueError(
+                "A negatively stated current-use claim records absence, not an observation. "
+                "Record it with coverage_record, or state what a source positively attests"
+            )
+        return self
 
     @model_validator(mode="after")
     def freshness_valid(self) -> Self:

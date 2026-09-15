@@ -130,3 +130,54 @@ def test_invalid_case_inputs_and_cross_case_job_reads_are_rejected(tmp_path):
         start="2024-01-01",
         end="2024-01-02",
     ).seeds == ["2001:db8::1", "example.com"]
+
+
+def test_grown_case_stays_readable_by_section_and_refuses_an_oversized_full_read(tmp_path):
+    """A hunt that retained many payloads must not become unreadable at its own gateway."""
+    import pytest
+    from test_queries import case_spec
+
+    from hunting_harness.gateway import Gateway
+
+    gateway = Gateway(tmp_path)
+    case = gateway.case_create(case_spec())
+    bulk = "x" * 4096
+
+    def grow(record):
+        record["evidence"].extend(
+            {
+                "id": f"e{index}",
+                "raw": {"payload": bulk},
+                "provider": "fixture",
+                "query_ids": ["q1"],
+                "retrieved_at": "2026-01-05T00:00:00+00:00",
+                "indicators": ["192.0.2.1"],
+            }
+            for index in range(600)
+        )
+        return record
+
+    gateway.store.change(case["id"], grow)
+
+    summary = gateway.case_read(case["id"])
+    assert len(summary["evidence"]) == 600
+    assert all("raw" not in item for item in summary["evidence"])
+
+    with pytest.raises(ValueError, match="above the .* response ceiling"):
+        gateway.case_read(case["id"], view="full")
+
+    page = gateway.case_read(case["id"], section="evidence", offset=0, limit=50, view="full")
+    assert page["total"] == 600
+    assert page["returned"] == 50
+    assert page["next_offset"] == 50
+    assert page["items"][0]["raw"]["payload"] == bulk
+
+    last = gateway.case_read(case["id"], section="evidence", offset=580, limit=50)
+    assert last["returned"] == 20
+    assert last["next_offset"] is None
+    assert "raw" not in last["items"][0]
+
+    with pytest.raises(ValueError, match="Section must be one of"):
+        gateway.case_read(case["id"], section="nonsense")
+    with pytest.raises(ValueError, match="View must be"):
+        gateway.case_read(case["id"], view="everything")

@@ -21,7 +21,7 @@ def test_export_keeps_case_status_and_unknown_costs_without_mutating_case(tmp_pa
 async def test_case_export_preserves_narrowed_candidates_history_gaps_and_decisions(tmp_path):
     from test_queries import FixtureSource, finished
 
-    from hunting_harness.models import Claim, Expansion, QuerySpec, Review
+    from hunting_harness.models import Claim, Deferral, Expansion, QuerySpec, Review
     from hunting_harness.providers.base import Observation, Page
 
     records = [
@@ -66,7 +66,19 @@ async def test_case_export_preserves_narrowed_candidates_history_gaps_and_decisi
                 distinctive=True,
             ),
         )
-        gateway.candidate_defer(case["id"], "192.0.2.3", "Undated common service")
+        undated = next(
+            c for c in gateway.case_read(case["id"])["candidates"] if c["indicator"] == "192.0.2.3"
+        )
+        gateway.candidate_defer(
+            case["id"],
+            Deferral(
+                candidate="192.0.2.3",
+                rationale="Inspected: undated common service, explained by prevalence",
+                basis="prevalence",
+                basis_evidence_ids=undated["evidence_ids"],
+                reopen_if="A dated distinctive observation is retained",
+            ),
+        )
         finding = gateway.finding_propose(
             case["id"],
             Claim(

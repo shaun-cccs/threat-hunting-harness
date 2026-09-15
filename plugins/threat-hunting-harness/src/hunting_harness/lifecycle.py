@@ -2,15 +2,28 @@
 
 from uuid import uuid4
 
-from .analysis import candidate
-from .models import Record, indicator, now
+from .analysis import candidate, evidence_for, zone_authority_evidence
+from .models import Deferral, Record, indicator, now
 
 
-def defer(case: Record, value: str, rationale: str) -> Record:
-    if not rationale.strip():
-        raise ValueError("Narrowing requires a reason")
-    item = candidate(case, indicator(value))
-    assessment = {"rationale": rationale, "recorded_at": now()}
+def defer(case: Record, deferral: Deferral) -> Record:
+    """Narrowing states a class, its evidence, and what would reopen it.
+
+    An unstructured deferral is recorded as `uninspected`: a backlog item, not a disposition.
+    Settling reports such a candidate as an open lead rather than treating it as explained.
+    """
+    item = candidate(case, indicator(deferral.candidate))
+    if deferral.basis_evidence_ids:
+        evidence_for(case, item["indicator"], deferral.basis_evidence_ids)
+    authority = zone_authority_evidence(case, item["indicator"])
+    assessment = {
+        "rationale": deferral.rationale,
+        "basis": deferral.basis,
+        "basis_evidence_ids": list(deferral.basis_evidence_ids),
+        "reopen_if": deferral.reopen_if,
+        "zone_authority_signals": authority,
+        "recorded_at": now(),
+    }
     item.setdefault("selection_history", []).append({"selected": False, **assessment})
     item.update(
         selected=False,
@@ -123,8 +136,22 @@ def settle(case: Record) -> Record:
         }
         for c in case["candidates"]
     )
-    waiting = any(not g.get("resolved_by") for g in case["source_gaps"]) or any(
-        b["status"] == "waiting" for b in case["branches"]
+    open_leads = [
+        c["indicator"]
+        for c in case["candidates"]
+        if not c["selected"]
+        and (c.get("assessment") or {}).get("basis", "uninspected") == "uninspected"
+    ]
+    contradicted = [
+        c["indicator"]
+        for c in case["candidates"]
+        if not c["selected"] and (c.get("assessment") or {}).get("zone_authority_signals")
+    ]
+    waiting = (
+        any(not g.get("resolved_by") for g in case["source_gaps"])
+        or any(b["status"] == "waiting" for b in case["branches"])
+        or bool(open_leads)
+        or bool(contradicted)
     )
     if pending_queries or pending_branches or unassessed:
         status, reason = (
@@ -142,6 +169,16 @@ def settle(case: Record) -> Record:
         )
         status = "active" if independent or not waiting else "paused"
         reason = "Selected candidates still need completed investigation branches"
+    elif contradicted:
+        status, reason = (
+            "paused",
+            "Deferred candidates carry zone-authority evidence and need a disposition",
+        )
+    elif open_leads:
+        status, reason = (
+            "paused",
+            "Candidates were deferred without being inspected; they remain open leads",
+        )
     elif waiting:
         status, reason = (
             "paused",
@@ -153,7 +190,17 @@ def settle(case: Record) -> Record:
             "No further candidates meet expansion criteria; no work is waiting",
         )
     case.update(status=status, stopping_reason=reason)
-    return {"status": status, "reason": reason}
+    return {
+        "status": status,
+        "reason": reason,
+        "open_questions": {
+            "uninspected_deferrals": open_leads,
+            "zone_authority_deferrals": contradicted,
+            "unresolved_source_gaps": [
+                g["reason"] for g in case["source_gaps"] if not g.get("resolved_by")
+            ],
+        },
+    }
 
 
 def resume(case: Record, new_seeds: list[str], refresh: bool) -> Record:

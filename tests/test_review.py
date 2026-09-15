@@ -220,3 +220,66 @@ async def test_copied_reports_and_reviewer_agreement_do_not_add_source_independe
         retained = gateway.case_read(case["id"])
         assert retained["findings"][0]["independent_source_count"] == 1
         assert len(retained["evidence"]) == 2
+
+
+def test_negatively_stated_current_use_claim_is_refused_as_a_coverage_statement():
+    """Absence is a statement about coverage, so it must not enter the finding lifecycle."""
+    import pytest
+
+    from hunting_harness.models import Claim
+
+    with pytest.raises(ValueError, match="records absence, not an observation"):
+        Claim(
+            candidate="192.0.2.9",
+            kind="current_malicious_use",
+            statement="No source attests present malicious use of this host",
+            evidence_ids=["e1"],
+            alternative_explanations=["Missing provider coverage"],
+            freshness_start="2026-01-01",
+            freshness_end="2026-02-01",
+        )
+    positive = Claim(
+        candidate="192.0.2.9",
+        kind="current_malicious_use",
+        statement="Provider attests an active credential-harvesting page on this host",
+        evidence_ids=["e1"],
+        alternative_explanations=["Copied deployment template"],
+        freshness_start="2026-01-01",
+        freshness_end="2026-02-01",
+    )
+    assert positive.kind == "current_malicious_use"
+
+
+def test_coverage_record_states_what_was_and_was_not_covered(tmp_path):
+    from test_queries import case_spec
+
+    from hunting_harness.gateway import Gateway
+
+    gateway = Gateway(tmp_path)
+    case = gateway.case_create(case_spec())
+    statement = gateway.coverage_record(
+        case["id"],
+        subject="192.0.2.9",
+        question="Does any source attest present malicious use?",
+        looked_at=["censys reputation model output", "gti ip report"],
+        not_covered=["gti communicating_files refused", "greynoise first_seen restricted"],
+    )
+    assert statement["subject"] == "192.0.2.9"
+    assert len(statement["not_covered"]) == 2
+    read = gateway.case_read(case["id"])
+    assert read["status_summary"]["coverage_statements"] == 1
+    assert read["findings"] == []
+
+
+def test_records_from_one_provider_call_count_as_one_origin():
+    """Several records returned by a single query share its provider, call and coverage."""
+    from hunting_harness.analysis import independent_origins
+
+    one_call = [
+        {"raw": {"ip": "192.0.2.1"}, "query_ids": ["q1"]},
+        {"raw": {"ip": "192.0.2.2"}, "query_ids": ["q1"]},
+        {"raw": {"ip": "192.0.2.3"}, "query_ids": ["q1"]},
+    ]
+    assert independent_origins(one_call) == 1
+    two_calls = one_call + [{"raw": {"ip": "192.0.2.4"}, "query_ids": ["q2"]}]
+    assert independent_origins(two_calls) == 2

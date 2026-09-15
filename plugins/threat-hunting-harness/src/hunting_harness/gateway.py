@@ -13,7 +13,17 @@ from typing import IO, Self, cast
 from uuid import uuid4
 
 from . import analysis, exports, lifecycle
-from .models import CaseSpec, Claim, Expansion, QuerySpec, Record, Review, indicator, now
+from .models import (
+    CaseSpec,
+    Claim,
+    Deferral,
+    Expansion,
+    QuerySpec,
+    Record,
+    Review,
+    indicator,
+    now,
+)
 from .providers.base import Page, Provider, SourceGap, observation_time
 from .store import Store
 
@@ -92,18 +102,105 @@ class Gateway:
                 "branches": [],
                 "decisions": [],
                 "source_gaps": [],
+                "coverage_statements": [],
             }
         )
 
-    def case_read(self, case_id: str) -> Record:
+    SECTIONS = ("queries", "candidates", "evidence", "findings", "branches")
+    FULL_LIMIT = 2_000_000
+
+    def case_read(
+        self,
+        case_id: str,
+        view: str = "summary",
+        section: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> Record:
+        """Read retained case state. Defaults to a digest; whole records are opt-in.
+
+        A hunt accumulates every provider payload it retained, so the full record outgrows any
+        single response. `view="summary"` omits raw evidence, `section` pages one list, and
+        `view="full"` is refused past a size ceiling rather than failing mid-transfer.
+        """
+        if view not in ("summary", "full"):
+            raise ValueError("View must be 'summary' or 'full'")
         case = self.store.read(case_id)
         case["usage"] = self._usage(case)
         case["reservations"] = {
             measure: self._reserved(case, measure) for measure in ("mcp_calls", "api_requests")
         }
-        case["status_summary"] = {
+        case["status_summary"] = self._status_summary(case)
+        if section is not None:
+            if section not in self.SECTIONS:
+                raise ValueError(f"Section must be one of {', '.join(self.SECTIONS)}")
+            if offset < 0 or limit < 1:
+                raise ValueError("Offset must be positive and limit at least one")
+            items = case[section][offset : offset + limit]
+            return {
+                "case_id": case["id"],
+                "section": section,
+                "offset": offset,
+                "limit": limit,
+                "total": len(case[section]),
+                "returned": len(items),
+                "next_offset": (
+                    offset + len(items) if offset + len(items) < len(case[section]) else None
+                ),
+                "items": items if view == "full" else [self._digest(section, i) for i in items],
+                "status_summary": case["status_summary"],
+            }
+        if view == "full":
+            size = len(json.dumps(case))
+            if size > self.FULL_LIMIT:
+                raise ValueError(
+                    f"Retained case is {size} bytes, above the {self.FULL_LIMIT} response ceiling. "
+                    "Read it a section at a time with section= and offset=, or use the default view"
+                )
+            return case
+        for name in self.SECTIONS:
+            case[name] = [self._digest(name, item) for item in case[name]]
+        return case
+
+    def _whole_case(self, case_id: str) -> Record:
+        """Every retained field, for writers that are not bound by a response size ceiling."""
+        case = self.store.read(case_id)
+        case["usage"] = self._usage(case)
+        case["reservations"] = {
+            measure: self._reserved(case, measure) for measure in ("mcp_calls", "api_requests")
+        }
+        case["status_summary"] = self._status_summary(case)
+        return case
+
+    @staticmethod
+    def _digest(section: str, item: Record) -> Record:
+        """Drop retained provider payloads only.
+
+        Everything a disposition or a continuation depends on stays: only `evidence[].raw`,
+        which is the bulk of a grown case, is withheld until asked for.
+        """
+        if section == "evidence":
+            return {k: v for k, v in item.items() if k != "raw"}
+        return item
+
+    @staticmethod
+    def _status_summary(case: Record) -> Record:
+        deferred = [c for c in case["candidates"] if not c["selected"] and c.get("assessment")]
+        return {
             "retained_candidates": len(case["candidates"]),
             "selected_candidates": sum(bool(c["selected"]) for c in case["candidates"]),
+            "deferral_bases": {
+                basis: sum(
+                    (c.get("assessment") or {}).get("basis", "uninspected") == basis
+                    for c in deferred
+                )
+                for basis in ("prevalence", "out_of_scope", "uninspected")
+            },
+            "zone_authority_deferrals": [
+                c["indicator"]
+                for c in deferred
+                if (c.get("assessment") or {}).get("zone_authority_signals")
+            ],
             "findings_awaiting_review": sum(
                 f["status"] == "awaiting_review" for f in case["findings"]
             ),
@@ -111,6 +208,7 @@ class Gateway:
                 f["status"] == "awaiting_analyst" for f in case["findings"]
             ),
             "analyst_decisions": len(case["decisions"]),
+            "coverage_statements": len(case.get("coverage_statements", [])),
             "query_states": {
                 state: sum(q["status"] == state for q in case["queries"])
                 for state in ("queued", "active", "completed", "partial", "failed", "interrupted")
@@ -121,7 +219,6 @@ class Gateway:
             },
             "unresolved_source_gaps": sum(not g.get("resolved_by") for g in case["source_gaps"]),
         }
-        return case
 
     @staticmethod
     def _reserved(case: Record, measure: str) -> int | None:
@@ -163,9 +260,44 @@ class Gateway:
             case_id, lambda c: analysis.decide(c, finding_id, decision, rationale)
         )
 
-    def candidate_defer(self, case_id: str, candidate: str, rationale: str) -> Record:
-        """Defer expansion of a candidate with a rationale while preserving its evidence."""
-        return self.store.change(case_id, lambda c: lifecycle.defer(c, candidate, rationale))
+    def candidate_defer(self, case_id: str, deferral: Deferral) -> Record:
+        """Defer a candidate with its class, that class's evidence, and what would reopen it.
+
+        A deferral without cited evidence is recorded as `uninspected` and reported as an open
+        lead at settle: narrowing an unread candidate postpones the question, it does not answer it.
+        """
+        return self.store.change(case_id, lambda c: lifecycle.defer(c, deferral))
+
+    def coverage_record(
+        self,
+        case_id: str,
+        subject: str,
+        question: str,
+        looked_at: list[str],
+        not_covered: list[str],
+    ) -> Record:
+        """Record what a source could and could not answer, without asserting a finding.
+
+        Non-detection belongs here. A provider that held no record of the subject supplies no
+        evidence about it, so this states which providers, fields and dates were actually
+        covered instead of letting silence read as a negative observation.
+        """
+        if not question.strip() or not looked_at:
+            raise ValueError("A coverage statement needs a question and the sources consulted")
+        statement: Record = {
+            "id": uuid4().hex,
+            "subject": indicator(subject),
+            "question": question,
+            "looked_at": list(looked_at),
+            "not_covered": list(not_covered),
+            "recorded_at": now(),
+        }
+
+        def append(case: Record) -> Record:
+            case.setdefault("coverage_statements", []).append(statement)
+            return statement
+
+        return self.store.change(case_id, append)
 
     def branch_record(
         self,
@@ -198,7 +330,7 @@ class Gateway:
 
     def case_export(self, case_id: str) -> Record:
         """Render retained case evidence and source records as Markdown, JSON, and CSV content."""
-        case = self.case_read(case_id)
+        case = self._whole_case(case_id)
         case["source_records"] = {}
         case["export_gaps"] = []
         for job in case["queries"]:
