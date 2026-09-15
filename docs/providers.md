@@ -17,7 +17,7 @@ establishes current malicious use. Undated evidence stays undated.
 | Provider | Enabled operations | Accounting and continuation |
 | --- | --- | --- |
 | Shodan API v1 | `host`, `search` | Exactly one API request per fetch, no MCP tool calls or adapter retries. Search uses documented pages of 100, retains all returned records, and returns the next page arguments when a full page has a known remaining total. Short/inconsistent pages and unknown totals are incomplete. Credits remain unknown. |
-| Censys Platform MCP | `get_host`, `get_host_timeline`, `search`, `get_certificate` | One MCP tool call; upstream requests and credits unknown. Search preserves `next_page_token`. Missing pagination markers and unverified timeline completeness are explicit gaps. |
+| Censys Platform Python SDK | `get_host`, `get_host_timeline`, `search`, `get_certificate` | One API request per fetch, no provider MCP tool calls or automatic retries. Search returns `next_page_token` as continuation arguments. Timeline continues from `scanned_to` toward the original oldest bound; event count does not determine completion. Credits remain unknown. |
 | Google GTI MCP | `get_domain_report`, `get_ip_address_report`, `get_entities_related_to_a_domain`, `get_entities_related_to_an_ip_address`, `search_iocs` | One MCP tool call; internal vt-py iterator requests and credits unknown. Reaching a positive result limit is partial because the server discards cursors/totals. A shorter successful list, including an empty list, establishes iterator exhaustion. `limit=0` exhausts the iterator; omitted limit uses the provider's default of 10, which is recorded in metadata. |
 | GreyNoise MCP | `lookup-ip-context`, `gnql-query`, `gnql-timeseries` | One MCP tool call; GET retries can make up to four upstream attempts, so requests and credits remain unknown. GNQL retains scroll arguments. Recall results preserve hourly bucket dates and report unverified per-bucket completeness. |
 
@@ -38,13 +38,27 @@ A successful empty search differs from a missing host report, authentication fai
 access denial, rate limit and malformed response. No scan, target fetch or DNS
 resolution operation is exposed.
 
-Censys accepts the Platform hosted endpoint only through trusted gateway configuration.
-The four input schemas match the inventory captured on 2026-09-14. JSON-string result
-envelopes are decoded while the original response remains retained. Host services keep
-individual observation dates; certificate SAN names become retained candidates but
-certificate validity dates do not establish observation or deployment time. Search
-field projections and absent dates remain explicit coverage notes. Adversary
-Investigation scan tools, collection writes and unverified compound tools are excluded.
+Censys uses `censys-platform==0.16.2` through the gateway's provider interface. Agents
+continue using the shared hunting MCP tools. The runtime passes `CENSYS_API_KEY` as the
+SDK personal access token and `CENSYS_ORG_ID` as organization context explicitly; the
+SDK's own `ORGANIZATION_ID` environment fallback does not replace this mapping.
+
+The four public operations retain their gateway arguments. Timeline `start_time` is
+the oldest bound and `end_time` is the newest; the adapter maps these to the SDK's
+oppositely named parameters. Each fetch returns one retained page. A continuation
+keeps the oldest bound and changes the newest bound to the raw `scanned_to`; later
+requests must copy the returned continuation exactly and reference the prior job.
+Repeated, invalid, or missing progress markers remain source gaps. A short page and
+acceptance of a long requested time range do not establish full historical coverage.
+
+Raw JSON is captured before typed SDK parsing so unknown fields and multiline values
+remain evidence. Host services keep individual observation dates; certificate SAN
+names become retained candidates but certificate validity dates do not establish
+observation or deployment time. Search field projections and absent dates remain
+explicit coverage notes. SDK methods outside the four-operation allowlist, including
+active scans and collection writes, are not exposed. The bundled [Censys agent
+guide](../skills/hunt/references/censys.md) links to selected local official method
+references and their source provenance only when needed.
 
 GTI uses Google `mcp-security` revision
 `9885ec6856ec72333091cf1a3b2ac1bb26abe149` (package 0.1.3). Relationships are limited to
@@ -87,12 +101,17 @@ Run offline provider verification with:
 .venv/bin/python -m mypy src
 ```
 
-Live checks are separate and opt-in. `hunt connections --live` checks authentication
-and Censys inventory; cached results avoid repeated checks unless explicitly refreshed.
+Live checks are separate and opt-in. `hunt connections --live` checks provider
+authentication and available account context; cached results avoid repeated checks
+unless explicitly refreshed. Censys uses the SDK rather than a hosted MCP inventory.
+Its check makes one account-metadata request: organization details when an organization
+ID is configured, or Free-user credit metadata otherwise. It reports authentication
+context without retaining raw account details or querying an indicator.
 `hunt smoke --ip 1.1.1.1` makes one existing Shodan host lookup with `history=false`,
 without search or retries. Run only for an analyst-selected indicator and retain the
 sanitized output. The coordinating agent already ran the bounded checks in this session:
-Shodan and GTI metadata authenticated (HTTP 200), Censys inventory contained 22 tools,
+Shodan and GTI metadata authenticated (HTTP 200), the earlier Censys MCP inventory
+contained 22 tools,
 and GreyNoise metadata returned HTTP 401. Shodan's one host lookup returned 16
 observations. These results do not establish historical/search entitlements, and
 GreyNoise account access remains unvalidated. No provider calls were made by this
@@ -101,7 +120,8 @@ implementation agent.
 ## Primary references
 
 - [Shodan host/history and search/page API](https://developer.shodan.io/api)
-- [Censys Platform MCP](https://docs.censys.com/docs/platform-mcp-server)
+- [Censys SDK source at the reviewed revision](https://github.com/censys/censys-sdk-python/tree/43a8a3ac1161e655eff3061ba3b7ab934c185c55)
+- [Local Censys method references and provenance](../skills/hunt/references/censys-sdk/README.md)
 - [Google GTI implementation](https://github.com/google/mcp-security/tree/9885ec6856ec72333091cf1a3b2ac1bb26abe149/server/gti)
 - [GreyNoise implementation](https://github.com/GreyNoise-Intelligence/greynoise-mcp-server/tree/cc3204dcde0994daebc09c0ac1a8ceea6cc59b81)
 

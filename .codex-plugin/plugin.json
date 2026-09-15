@@ -1,6 +1,6 @@
 {
   "name": "threat-hunting-harness",
-  "version": "0.1.0+codex.20260915002728",
+  "version": "0.1.0+codex.20260915012515",
   "description": "Resumable threat hunts inside Codex, with automatic provider setup and retained evidence.",
   "author": {
     "name": "Threat Hunting Harness contributors"

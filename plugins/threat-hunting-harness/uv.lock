@@ -191,6 +191,20 @@ wheels = [
 ]
 
 [[package]]
+name = "censys-platform"
+version = "0.16.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpcore" },
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/eb/62/193aab632c69ffaa554e7b948151dd0082a5f6cc5d0fbd06e93e52dee1b2/censys_platform-0.16.2.tar.gz", hash = "sha256:f04d15b2014ca5770e99f7f0ed05f49bb9867bb7fea75b5351f7fc36bb1dad6f", size = 269087, upload-time = "2026-09-11T14:37:48.918Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/15/3f662e43f6ed5a9fbedffa370742dd61c08f65c03df2ab3454dce1541a04/censys_platform-0.16.2-py3-none-any.whl", hash = "sha256:6e02dfac92e6c8d01a69068fc1cf54dd1e4dd4814abc1c03c8273f300ebf6c42", size = 818488, upload-time = "2026-09-11T14:37:50.717Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -1497,6 +1511,7 @@ name = "threat-hunting-harness"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "censys-platform" },
     { name = "httpx" },
     { name = "jsonschema" },
     { name = "mcp" },
@@ -1521,6 +1536,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "censys-platform", specifier = "==0.16.2" },
     { name = "gti-mcp", marker = "extra == 'gti'", git = "https://github.com/google/mcp-security?subdirectory=server%2Fgti&rev=9885ec6856ec72333091cf1a3b2ac1bb26abe149" },
     { name = "httpx", specifier = ">=0.28,<1" },
     { name = "jsonschema", specifier = ">=4.23,<5" },

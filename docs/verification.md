@@ -2,6 +2,50 @@
 
 Checks on 2026-09-14 used Python 3.12.3 on Linux. Live provider credentials were loaded from the ignored `.env` file. Account responses and raw case evidence remain in ignored local artifacts.
 
+## Censys SDK migration (2026-09-15)
+
+The `debug/censys-history` worktree replaces the provider-owned Censys MCP
+transport with `censys-platform==0.16.2`. CLI and plugin factories use the same
+SDK adapter. The checked-in plugin bundle includes the dependency lock, adapter,
+and the hunt skill's conditionally loaded Censys guide and individual method
+references. Documentation snapshots match release `v0.16.2` at
+`43a8a3ac1161e655eff3061ba3b7ab934c185c55`.
+
+A bounded live check used the original workspace's `.env` and organization
+context through a separate diagnostic gateway case. Four API requests were
+made, with zero provider MCP tool calls and no automatic retries:
+
+| Operation | Result |
+| --- | --- |
+| Historical host snapshot | HTTP 200; one service observation, retained as raw JSON |
+| Search for the same host | HTTP 200; successful empty result |
+| 90-day host timeline, first page | HTTP 200; 100 dated events and a continuation |
+| Timeline continuation | HTTP 200; 100 dated events and a further continuation |
+
+The timeline remained partial; this check did not retrieve the whole 90-day
+interval. The API returned submicrosecond `scanned_to` values. The adapter keeps
+them in continuation arguments and raw evidence, rounding the SDK request's
+upper bound outward to avoid dropping events. Each page was retained before
+its continuation was submitted. Request IDs and actual API request counts were
+recorded; per-call credits remain unknown. Certificate retrieval was verified
+with synthetic SDK responses rather than another live lookup.
+
+Local smoke evidence is retained under
+`/tmp/censys-sdk-assessment/migration-live/`, case
+`f0a16f3924004dc98fd4d713bb9ac511`, with `summary.json` and raw page artifacts.
+No original case records or workspace credentials were modified. Changes are
+in the isolated worktree and its rebuilt plugin bundle; the installed plugin
+has not been replaced by this check.
+
+Offline tests cover the real SDK over HTTPX mock transports, gateway page
+retention and request limits, identical-timestamp event preservation, raw unknown
+fields, multiline banners, date ordering and precision, HTTP/transport failures,
+credential mapping, schema changes, and the packaged skill/reference links.
+
+Final validation passed: **136 tests**, Ruff for source/tests/scripts, strict
+mypy across 27 source files, plugin bundle consistency, and `git diff --check`.
+The test run reported two existing upstream Starlette/AnyIO deprecation warnings.
+
 ## Native GitHub installation
 
 On 2026-09-15, Codex CLI 0.154.0 installed the marketplace directly from the pushed `implement/plugin` branch with:

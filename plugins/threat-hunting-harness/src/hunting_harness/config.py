@@ -5,6 +5,7 @@ import secrets
 from pathlib import Path
 
 from .providers.base import Provider
+from .providers.censys import Censys
 from .providers.mcp_source import McpSource
 from .providers.shodan import Shodan
 from .providers.transport import McpTransport
@@ -29,13 +30,7 @@ def providers(keys: dict[str, str], project: Path) -> dict[str, Provider]:
     if key := keys.get("SHODAN_API_KEY"):
         result["shodan"] = Shodan(key)
     if key := keys.get("CENSYS_API_KEY"):
-        headers = {"Authorization": "Bearer " + key}
-        if keys.get("CENSYS_ORG_ID"):
-            headers["X-Organization-ID"] = keys["CENSYS_ORG_ID"]
-        result["censys"] = McpSource(
-            "censys",
-            McpTransport(url="https://mcp.platform.censys.io/platform/mcp/", headers=headers),
-        )
+        result["censys"] = Censys(key, keys.get("CENSYS_ORG_ID"))
     if key := keys.get("GTI_API_KEY") or keys.get("VT_APIKEY"):
         # Use the project's pinned optional dependency, not an unrelated global
         # executable whose matching schema says nothing about its implementation.

@@ -7,7 +7,7 @@ name = "threat-hunting-harness"
 version = "0.1.0"
 description = "Resumable, evidence-first threat hunts through a shared MCP gateway"
 requires-python = ">=3.11"
-dependencies = ["mcp>=1.26,<2", "httpx>=0.28,<1", "pydantic>=2.11,<3", "python-dotenv>=1.1,<2", "jsonschema>=4.23,<5", "uvicorn>=0.35,<1"]
+dependencies = ["mcp>=1.26,<2", "httpx>=0.28,<1", "pydantic>=2.11,<3", "python-dotenv>=1.1,<2", "jsonschema>=4.23,<5", "uvicorn>=0.35,<1", "censys-platform==0.16.2"]
 
 [project.scripts]
 hunt = "hunting_harness.cli:main"

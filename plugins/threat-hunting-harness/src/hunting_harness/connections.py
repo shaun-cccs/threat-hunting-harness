@@ -10,7 +10,7 @@ import httpx
 from dotenv import dotenv_values
 
 from .models import Record, now
-from .providers.transport import McpTransport
+from .providers.censys import Censys
 
 PROVIDER_VARIABLES = (
     "SHODAN_API_KEY",
@@ -68,23 +68,18 @@ async def _metadata_check(key: str | None, url: str, auth: str) -> Record:
         return {"status": "transport_unavailable", "requests": 1}
 
 
-async def _censys_check(keys: dict[str, str], output: Path) -> Record:
+async def _censys_check(keys: dict[str, str]) -> Record:
     if not keys.get("CENSYS_API_KEY"):
-        return {"status": "not_configured", "sessions": 0}
-    headers = {"Authorization": "Bearer " + keys["CENSYS_API_KEY"]}
-    if keys.get("CENSYS_ORG_ID"):
-        headers["X-Organization-ID"] = keys["CENSYS_ORG_ID"]
-    source = McpTransport(url="https://mcp.platform.censys.io/platform/mcp/", headers=headers)
+        return {"status": "not_configured", "requests": 0}
     try:
         async with asyncio.timeout(CENSYS_TIMEOUT):
-            inventory = await source.inventory()
-        write_report(output / "censys-inventory.json", inventory)
-        return {"status": "mcp_connected", "tools": len(inventory), "sessions": 1, "tool_calls": 0}
-    except Exception:
+            return await Censys(
+                keys["CENSYS_API_KEY"], keys.get("CENSYS_ORG_ID")
+            ).check_connection()
+    except TimeoutError:
         return {
-            "status": "connection_not_validated",
-            "sessions": 1,
-            "tool_calls": 0,
+            "status": "provider_transport_unavailable",
+            "requests": 1,
             "organization_id_configured": bool(keys.get("CENSYS_ORG_ID")),
         }
 
@@ -112,8 +107,8 @@ async def validate_connections(keys: dict[str, str], output: Path) -> Record:
         for provider, (variable, url, auth) in endpoints.items()
     ]
     # All checks fit within the longest individual deadline instead of accumulating
-    # three metadata deadlines before starting the Censys handshake.
-    results = await asyncio.gather(*checks, _censys_check(keys, output))
+    # three metadata deadlines before starting the Censys account check.
+    results = await asyncio.gather(*checks, _censys_check(keys))
     report["providers"] = dict(zip([*endpoints, "censys"], results, strict=True))
     write_report(output / "connections.json", report)
     return report
