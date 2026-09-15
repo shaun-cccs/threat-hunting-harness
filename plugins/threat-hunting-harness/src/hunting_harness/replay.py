@@ -169,8 +169,16 @@ async def fixture_workflow(client: str, output_dir: Path) -> Record:
                         "candidate_defer",
                         {
                             "case_id": case_id,
-                            "candidate": candidate["indicator"],
-                            "rationale": "Retained; no further expansion proposed",
+                            "deferral": {
+                                "candidate": candidate["indicator"],
+                                "rationale": (
+                                    "Inspected retained observations; no expansion proposed "
+                                    "for this candidate"
+                                ),
+                                "basis": "out_of_scope",
+                                "basis_evidence_ids": list(candidate["evidence_ids"]),
+                                "reopen_if": "New dated evidence links this candidate to a seed",
+                            },
                         },
                     )
                 await investigator.call(

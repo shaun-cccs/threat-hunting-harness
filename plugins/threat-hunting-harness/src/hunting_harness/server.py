@@ -58,9 +58,20 @@ def create_app(
         return gateway.case_create(spec)
 
     @mcp.tool()
-    def case_read(case_id: str) -> Record:
-        """Read the retained case and recorded hunt status."""
-        return gateway.case_read(case_id)
+    def case_read(
+        case_id: str,
+        view: str = "summary",
+        section: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> Record:
+        """Read the retained case and recorded hunt status.
+
+        The default view omits retained provider payloads so a grown case stays readable. Pass
+        section with offset to page one list, or view="full" for whole records under a size
+        ceiling. Reading evidence raw payloads requires view="full".
+        """
+        return gateway.case_read(case_id, view=view, section=section, offset=offset, limit=limit)
 
     @mcp.tool()
     def playbooks() -> Record:
@@ -73,6 +84,7 @@ def create_app(
         gateway.job_read,
         gateway.candidate_select,
         gateway.candidate_defer,
+        gateway.coverage_record,
         gateway.finding_propose,
         gateway.finding_review,
         gateway.branch_record,

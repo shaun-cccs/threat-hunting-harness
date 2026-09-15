@@ -32,17 +32,74 @@ PLAYBOOKS: Record = {
         "hypothesis": "A dated DNS relationship connects a seed to candidate infrastructure.",
         "observations": "GTI recorded domain/IP resolution relationships with their source dates.",
         "narrowing": (
-            "Compare resolution dates with the campaign; retain conflicts and later reassignment."
+            "Compare resolution dates with the campaign; retain conflicts and later reassignment. "
+            "Resolving under a zone is not a relationship until a wildcard is ruled out; see "
+            "the zone_authority playbook before disposing of any host from a domain pivot."
         ),
         "alternatives": [
             "Shared resolver or hosting",
             "Parking",
             "Reassignment",
             "Undated relationship",
+            "Wildcard or rotation artefact",
         ],
         "operations": [
             "gti.get_entities_related_to_a_domain",
             "gti.get_entities_related_to_an_ip_address",
+        ],
+    },
+    "zone_authority": {
+        "when_to_use": (
+            "A domain pivot returned hosts, or a candidate resolves under a zone you did not "
+            "register."
+        ),
+        "expansion_rationale": (
+            "A host serving a zone's authoritative DNS is operator-controlled infrastructure."
+        ),
+        "hypothesis": (
+            "Serving a zone and resolving under it are different relationships, and only "
+            "the first implies control."
+        ),
+        "observations": (
+            "Registry and recorded NS records, host services answering DNS, recorded forward "
+            "and reverse names, and historical WHOIS registry epochs."
+        ),
+        "pivots": [
+            "Test the zone for a wildcard with a label nobody would provision. If it answers, "
+            "co-resolution establishes nothing on its own however many hosts share the name.",
+            "Check every host in a domain-pivot result against the zone's NS records and its own "
+            "services. A nameserver name or a DNS responder is operator infrastructure and is "
+            "never an end-user, CPE or exit-node class.",
+            "Where a nameserver host runs other services, inspect them unprojected. Authoritative "
+            "DNS beside an unexplained listener is a question, not a coincidence.",
+        ],
+        "validation": (
+            "Read registry epochs before carrying anything backwards. A lapsed and re-registered "
+            "domain has disjoint operators, so earlier resolutions, certificates and provider "
+            "first-seen dates belong to the prior registrant. State which epoch each artefact "
+            "falls in. Reverse DNS carrying a resolve time but no name is a lookup that returned "
+            "nothing, not a confirmed name."
+        ),
+        "narrowing": (
+            "Select on serving the zone, which is evidenced control. Do not propagate "
+            "maliciousness to hosts the zone merely names."
+        ),
+        "stop_or_reconsider": (
+            "Never defer a host carrying zone-authority evidence into an end-user class; give it a "
+            "disposition of its own. Missing NS observations are a source gap, not an absence."
+        ),
+        "alternatives": [
+            "Wildcard artefact",
+            "Rotation target the operator does not control",
+            "Shared VPS with unrelated tenants",
+            "Prior registrant",
+        ],
+        "operations": [
+            "censys.get_host",
+            "censys.search",
+            "censys.get_host_timeline",
+            "gti.get_domain_report",
+            "gti.get_entities_related_to_a_domain",
         ],
     },
     "service_fingerprint": {
@@ -223,7 +280,19 @@ Failed access is a source gap, not evidence of no matches. Additional strategies
 stated hypothesis and evidence rationale. Select candidates only with dated evidence and a
 distinctive relationship or independent supporting observations. ASN, hosting, and CDN
 membership alone are insufficient. Record why other candidates are left outside the expansion
-subset with candidate_defer; retain them. Record scoped investigation branches, their
+subset with candidate_defer; retain them. Narrowing carries the same burden as expansion: state
+the class, the retained field evidence placing the candidate in it, and what would reopen it. A
+candidate you never inspected is deferred as uninspected and stays an open lead through settling.
+Be strict about what you assert and permissive about what you look at: absence of detection
+corroborates at most and eliminates nothing, so a provider's silence is never the class evidence
+and never a reason to stop. Non-detection is a statement about coverage, so record it with
+coverage_record naming the sources consulted and the fields and dates not covered, rather than
+proposing a negatively stated finding. A provider holding no record of a subject supplies no
+evidence about it. Reputation scores are model outputs over observations you already hold, so
+they are context, never a source; provider agreement is not corroboration when none of them
+looked. Read a candidate unprojected before disposing of it: a search that set fields returns a
+view, and a value missing from a projection was never requested. Record scoped
+investigation branches, their
 hypotheses, active/waiting/completed state, and stopping reasons. Keep historical association,
 current malicious use, and attribution as separate claims. Preserve observation dates,
 conflicts, missing dates, and alternative explanations. Retrieval time is not an observation
