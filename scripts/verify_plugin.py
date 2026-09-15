@@ -1,7 +1,8 @@
 """Opt-in installed-plugin fixture: zero queries and one native shared-state reader.
 
-Requires an installed plugin and existing Codex login. This verifies native wiring,
-shared state and exports, not intelligence quality, evidence review or human acceptance.
+Requires an installed plugin, existing Codex login and host permission for the hunting
+tools (this headless runner cannot answer permission prompts). This verifies native
+wiring, shared state and exports, not intelligence quality, review or human acceptance.
 """
 
 from __future__ import annotations
