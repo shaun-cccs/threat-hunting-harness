@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -18,6 +19,7 @@ from .gateway import Gateway
 from .models import Record
 from .providers.shodan import Shodan
 from .server import create_app
+from .shodan_fixture import ShodanFixtureTransport
 
 
 class ReplaySession:
@@ -72,8 +74,8 @@ async def fixture_workflow(client: str, output_dir: Path) -> Record:
     prepare_client(client, output_dir / "profile", "http://127.0.0.1:8765/mcp")
     transcript: list[Record] = []
 
-    async def response(request: httpx.Request) -> httpx.Response:
-        await asyncio.sleep(0.02)  # Keep one query active long enough to observe status.
+    def response(request: httpx.Request) -> httpx.Response:
+        time.sleep(0.02)  # Keep one query active long enough to observe status.
         if request.url.path == "/shodan/host/search":
             return httpx.Response(
                 200,
@@ -95,7 +97,7 @@ async def fixture_workflow(client: str, output_dir: Path) -> Record:
             )
         return httpx.Response(200, json={"data": []})
 
-    provider = Shodan("fixture-only", transport=httpx.MockTransport(response))
+    provider = Shodan("fixture-only", transport=ShodanFixtureTransport(response))
     root = output_dir / "cases"
     app = create_app(root, "fixture-token-" * 4, {"shodan": provider})
     transport_app = cast(Starlette, app.app)

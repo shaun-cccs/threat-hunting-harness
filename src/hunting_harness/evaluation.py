@@ -21,6 +21,7 @@ from .models import CaseSpec, Record, indicator
 from .providers.shodan import Shodan
 from .replay import ReplaySession, replay_session
 from .server import create_app
+from .shodan_fixture import ShodanFixtureTransport
 
 
 class EvaluationError(ValueError):
@@ -91,7 +92,7 @@ def _provider(fixture: Record) -> Shodan:
             return httpx.Response(200, json=fixture["hosts"].get(ip, {"data": []}))
         return httpx.Response(400, json={"error": "unsupported_fixture_operation"})
 
-    return Shodan("fixture-only", transport=httpx.MockTransport(respond))
+    return Shodan("fixture-only", transport=ShodanFixtureTransport(respond))
 
 
 def _fingerprint(evidence: Record) -> str | None:

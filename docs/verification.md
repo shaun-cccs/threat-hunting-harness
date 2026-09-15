@@ -39,6 +39,47 @@ installation, skill discovery, MCP connectivity, and shared runtime behavior.
 Remote GitHub installation of this change and a Claude model-driven hunt with
 native subagent review have not been run.
 
+## Shodan SDK migration (2026-09-15)
+
+The existing direct Shodan HTTP adapter now uses the official `shodan==1.31.0`
+Python SDK. The public `host` and `search` operations, default host history,
+per-banner dates, raw evidence, explicit search continuation, and unknown credit
+accounting are preserved. Search explicitly requests full banners with
+`minify=False`. Connectivity uses SDK `info()` and retains only safe status and
+request-count metadata. CLI and plugin factories share this adapter.
+
+The synchronous SDK runs in a worker with a controlled Requests session: fixed
+provider URL, no inherited proxy settings, connect/read timeouts, no redirects,
+no retries, and observed dispatch counts. HTTP errors are classified from captured
+status because SDK exceptions discard it. Malformed successful responses remain
+retained evidence gaps. Cancellation leaves execution uncertain if the worker was
+already running; retained queries are interrupted without automatic replay.
+
+The [research note](research/shodan-python-sdk.md) cites the inspected official
+source and API docs. The hunt skill's [Shodan guide](../skills/hunt/references/shodan.md)
+routes to locally bundled host, search, and client/error excerpts. Provenance
+records immutable revision `87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8`, original source
+ranges, and SHA-256 hashes; tests verify the client excerpts against the installed
+PyPI release. The marketplace bundle includes the adapter, lockfile, guide, and
+references.
+
+Validation completed locally:
+
+- Full offline suite: **147 passed**, including real SDK request serialization,
+  history and full-banner retention, pagination, account checks, status mapping,
+  malformed bodies, redirects, environment overrides, safe errors, actual failure
+  accounting, shared limits, cancellation/restart, fixture evaluation, and packaging.
+- Strict mypy: **29 source files passed**, including the native verification script.
+- Ruff, skill validation, dependency lock check, bundle consistency, and Git
+  whitespace checks passed. Source distribution and wheel builds succeeded under
+  `/tmp/shodan-sdk-migration-build/`.
+- Two existing Starlette/AnyIO test-client deprecation warnings remain.
+
+No live Shodan account or intelligence request was made for this migration.
+The prior live HTTP-adapter checks below do not establish authenticated SDK
+compatibility, historical coverage, entitlement, or exact credit costs. The plugin
+bundle was rebuilt; installed host sessions were not reinstalled or restarted.
+
 ## Censys SDK migration (2026-09-15)
 
 The `debug/censys-history` worktree replaces the provider-owned Censys MCP

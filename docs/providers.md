@@ -16,7 +16,7 @@ establishes current malicious use. Undated evidence stays undated.
 
 | Provider | Enabled operations | Accounting and continuation |
 | --- | --- | --- |
-| Shodan API v1 | `host`, `search` | Exactly one API request per fetch, no MCP tool calls or adapter retries. Search uses documented pages of 100, retains all returned records, and returns the next page arguments when a full page has a known remaining total. Short/inconsistent pages and unknown totals are incomplete. Credits remain unknown. |
+| Shodan Python SDK | `host`, `search` | Exactly one API request per fetch, no MCP tool calls or adapter retries. Search uses documented pages of 100, retains all returned records, and returns the next page arguments when a full page has a known remaining total. Short/inconsistent pages and unknown totals are incomplete. Credits remain unknown. |
 | Censys Platform Python SDK | `get_host`, `get_host_timeline`, `search`, `get_certificate` | One API request per fetch, no provider MCP tool calls or automatic retries. Search returns `next_page_token` as continuation arguments. Timeline continues from `scanned_to` toward the original oldest bound; event count does not determine completion. Credits remain unknown. |
 | Google GTI MCP | `get_domain_report`, `get_ip_address_report`, `get_entities_related_to_a_domain`, `get_entities_related_to_an_ip_address`, `search_iocs` | One MCP tool call; internal vt-py iterator requests and credits unknown. Reaching a positive result limit is partial because the server discards cursors/totals. A shorter successful list, including an empty list, establishes iterator exhaustion. `limit=0` exhausts the iterator; omitted limit uses the provider's default of 10, which is recorded in metadata. |
 | GreyNoise MCP | `lookup-ip-context`, `gnql-query`, `gnql-timeseries` | One MCP tool call; GET retries can make up to four upstream attempts, so requests and credits remain unknown. GNQL retains scroll arguments. Recall results preserve hourly bucket dates and report unverified per-bucket completeness. |
@@ -29,6 +29,19 @@ extra upstream tools does not enable them. Input arguments also reject extra fie
 invalid IPs/domains/fingerprints, invalid times, and unsupported relationship names.
 Optional API-request limits cannot be promised for MCP integrations; the gateway must
 reject those limits when request accounting is unknown.
+
+Shodan uses `shodan==1.31.0` from the official `achillean/shodan-python` project.
+The runtime passes `SHODAN_API_KEY` explicitly and fixes the API destination. SDK
+calls run outside the async event loop with a Requests session that applies a
+20-second connect/read timeout, disables redirects and environment trust, and
+counts dispatch attempts. Retries remain disabled. Search passes `minify=False`
+to retain full banners. Successful raw JSON is retained independently of SDK errors;
+malformed successful bodies are retained as response gaps. HTTP failures use safe
+status-derived codes with observed request counts. A cancelled synchronous request
+can finish in its worker; it is not replayed, and the gateway records interruption
+as uncertain execution. The SDK's private session integration is covered by the
+pinned-package tests. The bundled [Shodan guide](../skills/hunt/references/shodan.md)
+links to the query-language reference and selected official SDK method references.
 
 Shodan `host` defaults to `history=true`; each banner retains its own timestamp,
 raw data and `_shodan.id` where supplied. Host `last_update` is never substituted for
@@ -58,7 +71,8 @@ observation or deployment time. Search field projections and absent dates remain
 explicit coverage notes. SDK methods outside the four-operation allowlist, including
 active scans and collection writes, are not exposed. The bundled [Censys agent
 guide](../skills/hunt/references/censys.md) links to selected local official method
-references and their source provenance only when needed.
+references, CenQL and regex documentation, and host/web/certificate field catalogs
+only when needed.
 
 GTI uses Google `mcp-security` revision
 `9885ec6856ec72333091cf1a3b2ac1bb26abe149` (package 0.1.3). Relationships are limited to
@@ -97,13 +111,14 @@ and credential-bearing request URLs are not retained in case errors.
 Run offline provider verification with:
 
 ```bash
-.venv/bin/python -m pytest tests/test_shodan.py tests/test_mcp_providers.py tests/test_provider_contracts.py
+.venv/bin/python -m pytest tests/test_shodan.py tests/test_censys.py tests/test_mcp_providers.py tests/test_provider_contracts.py tests/test_sdk_docs.py
 .venv/bin/python -m mypy src
 ```
 
 Live checks are separate and opt-in. `hunt connections --live` checks provider
 authentication and available account context; cached results avoid repeated checks
-unless explicitly refreshed. Censys uses the SDK rather than a hosted MCP inventory.
+unless explicitly refreshed. Shodan uses SDK `info()` for one account-metadata
+request and reports status without retaining account balances. Censys uses the SDK rather than a hosted MCP inventory.
 Its check makes one account-metadata request: organization details when an organization
 ID is configured, or Free-user credit metadata otherwise. It reports authentication
 context without retaining raw account details or querying an indicator.

@@ -63,14 +63,22 @@ async def test_all_checks_start_concurrently_and_each_runs_once(tmp_path, monkey
                 "organization_id_configured": True,
             }
 
+    class Shodan:
+        def __init__(self, key):
+            assert key == KEYS["SHODAN_API_KEY"]
+
+        async def check_connection(self):
+            await start("shodan-account")
+            return {"status": "authenticated", "http_status": 200, "requests": 1}
+
+    monkeypatch.setattr(connections, "Shodan", Shodan)
     monkeypatch.setattr(connections.httpx, "AsyncClient", Client)
     monkeypatch.setattr(connections, "Censys", Censys)
     async with asyncio.timeout(2):
         report = await connections.validate_connections(KEYS, tmp_path)
     assert len(started) == len(set(started)) == 4
-    assert len(metadata) == 3
+    assert len(metadata) == 2
     assert dict((url, (params, headers)) for url, params, headers in metadata) == {
-        "https://api.shodan.io/api-info": ({"key": KEYS["SHODAN_API_KEY"]}, None),
         "https://www.virustotal.com/api/v3/users/me": (None, {"x-apikey": KEYS["VT_APIKEY"]}),
         "https://api.greynoise.io/v3/user": (None, {"key": KEYS["GREYNOISE_API_KEY"]}),
     }
@@ -94,8 +102,10 @@ async def test_all_checks_start_concurrently_and_each_runs_once(tmp_path, monkey
 async def test_hanging_checks_are_bounded_without_retries(tmp_path, monkeypatch):
     metadata_attempts = []
     censys_attempts = []
+    shodan_attempts = []
     monkeypatch.setattr(connections, "METADATA_TIMEOUT", 0.03)
     monkeypatch.setattr(connections, "CENSYS_TIMEOUT", 0.06)
+    monkeypatch.setattr(connections, "SHODAN_TIMEOUT", 0.06)
 
     class Client:
         def __init__(self, **options):
@@ -119,13 +129,27 @@ async def test_hanging_checks_are_bounded_without_retries(tmp_path, monkeypatch)
             censys_attempts.append("account")
             await asyncio.Event().wait()
 
+    class Shodan:
+        def __init__(self, *args):
+            pass
+
+        async def check_connection(self):
+            shodan_attempts.append("account")
+            await asyncio.Event().wait()
+
+    monkeypatch.setattr(connections, "Shodan", Shodan)
     monkeypatch.setattr(connections.httpx, "AsyncClient", Client)
     monkeypatch.setattr(connections, "Censys", Censys)
     async with asyncio.timeout(1):
         report = await connections.validate_connections(KEYS, tmp_path)
-    assert len(metadata_attempts) == len(set(metadata_attempts)) == 3
+    assert len(metadata_attempts) == len(set(metadata_attempts)) == 2
+    assert shodan_attempts == ["account"]
+    assert report["providers"]["shodan"] == {
+        "status": "provider_transport_unavailable",
+        "requests": 1,
+    }
     assert censys_attempts == ["account"]
-    for provider in ("shodan", "gti", "greynoise"):
+    for provider in ("gti", "greynoise"):
         assert report["providers"][provider] == {"status": "transport_unavailable", "requests": 1}
     assert report["providers"]["censys"] == {
         "status": "provider_transport_unavailable",
@@ -140,6 +164,7 @@ async def test_no_credentials_creates_no_transports(tmp_path, monkeypatch):
 
     monkeypatch.setattr(connections.httpx, "AsyncClient", unexpected)
     monkeypatch.setattr(connections, "Censys", unexpected)
+    monkeypatch.setattr(connections, "Shodan", unexpected)
     report = await connections.validate_connections({}, tmp_path)
     for provider in ("shodan", "gti", "greynoise"):
         assert report["providers"][provider] == {"status": "not_configured", "requests": 0}

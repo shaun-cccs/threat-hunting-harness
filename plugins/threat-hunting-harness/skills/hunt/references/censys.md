@@ -17,7 +17,9 @@ Submit one operation through `query_submit`, using the existing case and its all
 
 ## Construct a search and check unexpected zeros
 
-Choose fields from the retained record and the provider's documented query schema. A field returned in JSON is not necessarily searchable. The operation schema validates arguments; it does not validate the meaning of the CenQL string. Treat the following as known query failure modes and use controls when results are surprising.
+Before composing the first Censys search in a branch, read the [CenQL syntax](censys-query/censys_query_language.md). For `=~`, also read the [regex reference](censys-query/censys_regex_language.md). The [query documentation index](censys-query/README.md) explains how to choose references and encode queries as JSON.
+
+Verify each field against the relevant saved catalog: [host](censys-query/queryable_fields/host_censys_queryable_fields.md), [web](censys-query/queryable_fields/web_censys_queryable_fields.md), [certificate](censys-query/queryable_fields/certificate_censys_queryable_fields.md), or [tags](censys-query/queryable_fields/misc_censys_queryable_fields.md). Search the exact field or prefix and inspect its type and nested parents; read only the rows needed for this query. A field returned in JSON is not necessarily searchable. The operation schema validates arguments; it does not validate the meaning of the CenQL string. Treat the following as known query failure modes and use controls when results are surprising.
 
 - Bind related conditions to the same object. A top-level `AND` can match a port on one service and content on another. Nest vendor/product/version together, and header key/value together. Use full field paths rather than aliases inside nested expressions.
 - `:` is tokenized and case-insensitive; `=` is exact and case-sensitive. Regex with `=~` is case-sensitive. Prefer exact observed values or meaningful pattern structure over common words.

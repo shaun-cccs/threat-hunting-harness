@@ -1,0 +1,101 @@
+{
+  "repository": "https://github.com/achillean/shodan-python",
+  "revision": "87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8",
+  "package": "shodan",
+  "version": "1.31.0",
+  "retrieved_at": "2026-09-15",
+  "release_tag": null,
+  "distribution_sha256": "c73275386ea02390e196c35c660706a28dd4d537c5a21eb387ab6236fac251f6",
+  "source": "Official Git checkout; client.py, exception.py, setup.py, requirements.txt byte-identical to the PyPI 1.31.0 source distribution. No corresponding release tag was found.",
+  "transformation": "Selected source excerpts in fenced blocks; line endings normalized to LF and trailing whitespace stripped for display. Source and excerpt hashes use original bytes; artifact hashes cover saved Markdown. Gateway notes are separate from upstream excerpts.",
+  "artifacts": [
+    {
+      "file": "host.md",
+      "sha256": "1e835ee37142ac2b849c025b2cf79a1289a39a2bf992d760c87c0f5787f26485",
+      "sources": [
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py",
+          "source_path": "shodan/client.py",
+          "source_sha256": "ab1982fc9f8f0ed4f91a8445ad0bd8dc40fb7f0ed092f0540ecef51dce5a63f5",
+          "line_start": 423,
+          "line_end": 441,
+          "excerpt_sha256": "e29042e0604367f95afb3de4557cae111c46d8fcaa00d663feec9d67e4ddcbb6"
+        }
+      ]
+    },
+    {
+      "file": "search.md",
+      "sha256": "826ae0ace55ca19cc6d3e5b5206dcc1d5df67f5b04028d3fcf5c8866ae3a9e41",
+      "sources": [
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py",
+          "source_path": "shodan/client.py",
+          "source_sha256": "ab1982fc9f8f0ed4f91a8445ad0bd8dc40fb7f0ed092f0540ecef51dce5a63f5",
+          "line_start": 534,
+          "line_end": 571,
+          "excerpt_sha256": "02bf6f6cdc849e320c76cd47d0a9545bdc34d939e48066ed7d513293babe57ee"
+        },
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/docs/tutorial.rst",
+          "source_path": "docs/tutorial.rst",
+          "source_sha256": "9e310401aa0723a4f5849ffce021717469badf4f5f7da449fbd02be5cae9645d",
+          "line_start": 62,
+          "line_end": 88,
+          "excerpt_sha256": "d93938e015762dddc25a012fa11781837f127e65d6d412e0031fce19cf00077b"
+        }
+      ]
+    },
+    {
+      "file": "client-and-errors.md",
+      "sha256": "1a820f21d71f3500a32689cfa3571627de76a1640849aba21738749fe9b25959",
+      "sources": [
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py",
+          "source_path": "shodan/client.py",
+          "source_sha256": "ab1982fc9f8f0ed4f91a8445ad0bd8dc40fb7f0ed092f0540ecef51dce5a63f5",
+          "line_start": 294,
+          "line_end": 324,
+          "excerpt_sha256": "8b0843723a27c441d64d2e525600f67bd115769a77f5367c565e38f851e31898"
+        },
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py",
+          "source_path": "shodan/client.py",
+          "source_sha256": "ab1982fc9f8f0ed4f91a8445ad0bd8dc40fb7f0ed092f0540ecef51dce5a63f5",
+          "line_start": 326,
+          "line_end": 404,
+          "excerpt_sha256": "748df52bb6efab68910c4bc9e7604a218263202693aab08acac392acfb5a9162"
+        },
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/client.py",
+          "source_path": "shodan/client.py",
+          "source_sha256": "ab1982fc9f8f0ed4f91a8445ad0bd8dc40fb7f0ed092f0540ecef51dce5a63f5",
+          "line_start": 443,
+          "line_end": 447,
+          "excerpt_sha256": "c799df19c741d0333621556ac70a4ac45e5f4f93d0ff218cf0eb454a2bf04ace"
+        },
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/shodan/exception.py",
+          "source_path": "shodan/exception.py",
+          "source_sha256": "7deffd0db56feb244d49777fd883e1e1bda6068eb5fca3dae1a56103231e73f7",
+          "line_start": 1,
+          "line_end": 7,
+          "excerpt_sha256": "a7705a980b1fd1c360167ea48d312160e838a652cda234dc943a461ac7a51490"
+        }
+      ]
+    },
+    {
+      "file": "LICENSE.md",
+      "sha256": "daff592f29bf79de0f24f5fe548f38abcc3d5e51a85ca94a2b7074d05722a1f2",
+      "sources": [
+        {
+          "source_url": "https://github.com/achillean/shodan-python/blob/87a0688d1e5b7e4bb13ae4f5fd7cb937a671cba8/LICENSE",
+          "source_path": "LICENSE",
+          "source_sha256": "daff592f29bf79de0f24f5fe548f38abcc3d5e51a85ca94a2b7074d05722a1f2",
+          "line_start": 1,
+          "line_end": 27,
+          "excerpt_sha256": "daff592f29bf79de0f24f5fe548f38abcc3d5e51a85ca94a2b7074d05722a1f2"
+        }
+      ]
+    }
+  ]
+}

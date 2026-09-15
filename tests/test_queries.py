@@ -1,4 +1,5 @@
 import asyncio
+import threading
 
 import httpx
 import pytest
@@ -6,6 +7,7 @@ import pytest
 from hunting_harness.gateway import Gateway
 from hunting_harness.models import CaseSpec, QuerySpec
 from hunting_harness.providers.shodan import Shodan
+from hunting_harness.shodan_fixture import ShodanFixtureTransport
 
 
 def case_spec():
@@ -37,7 +39,7 @@ async def test_query_retains_evidence_and_reopens_without_repeating_provider_req
             },
         )
 
-    providers = {"shodan": Shodan("fixture", transport=httpx.MockTransport(response))}
+    providers = {"shodan": Shodan("fixture", transport=ShodanFixtureTransport(response))}
     async with Gateway(tmp_path, providers) as gateway:
         case = gateway.case_create(case_spec())
         query = QuerySpec(
@@ -59,13 +61,13 @@ async def test_query_retains_evidence_and_reopens_without_repeating_provider_req
 
 @pytest.mark.parametrize("measure", ["query_calls", "api_requests"])
 async def test_shared_limit_and_deduplication_while_status_remains_responsive(tmp_path, measure):
-    released = asyncio.Event()
+    released = threading.Event()
 
-    async def response(request):
-        await released.wait()
+    def response(request):
+        assert released.wait(3)
         return httpx.Response(200, json={"data": []})
 
-    providers = {"shodan": Shodan("fixture", transport=httpx.MockTransport(response))}
+    providers = {"shodan": Shodan("fixture", transport=ShodanFixtureTransport(response))}
     async with Gateway(tmp_path, providers) as gateway:
         spec = case_spec().model_copy(update={"limits": {measure: 1}})
         case = gateway.case_create(spec)
@@ -94,7 +96,7 @@ async def test_submitted_query_is_immutable_even_if_caller_changes_its_input(tmp
         requested.append(request.url.path)
         return httpx.Response(200, json={"data": []})
 
-    provider = Shodan("fixture", transport=httpx.MockTransport(response))
+    provider = Shodan("fixture", transport=ShodanFixtureTransport(response))
     async with Gateway(tmp_path, {"shodan": provider}) as gateway:
         case = gateway.case_create(case_spec())
         query = QuerySpec(
@@ -113,15 +115,17 @@ async def test_submitted_query_is_immutable_even_if_caller_changes_its_input(tmp
 
 async def test_interrupted_query_survives_restart_without_automatic_retry(tmp_path):
     entered = asyncio.Event()
+    released = threading.Event()
+    loop = asyncio.get_running_loop()
     calls = []
 
-    async def response(request):
+    def response(request):
         calls.append(request.url.path)
-        entered.set()
-        await asyncio.Event().wait()
+        loop.call_soon_threadsafe(entered.set)
+        released.wait(3)
         return httpx.Response(200, json={"data": []})
 
-    provider = Shodan("fixture", transport=httpx.MockTransport(response))
+    provider = Shodan("fixture", transport=ShodanFixtureTransport(response))
     async with Gateway(tmp_path, {"shodan": provider}) as gateway:
         case = gateway.case_create(case_spec())
         query = QuerySpec(
@@ -134,6 +138,7 @@ async def test_interrupted_query_survives_restart_without_automatic_retry(tmp_pa
         job = await gateway.query_submit(case["id"], query)
         await asyncio.wait_for(entered.wait(), 3)
         assert gateway.job_read(case["id"], job["id"])["status"] == "active"
+    released.set()
     async with Gateway(tmp_path, {"shodan": provider}) as reopened:
         assert reopened.job_read(case["id"], job["id"])["status"] == "interrupted"
         assert reopened.hunt_settle(case["id"])["status"] == "paused"
@@ -223,6 +228,7 @@ async def test_abrupt_restart_preserves_uncertain_execution_and_branch_state(tmp
 
     program = """
 import asyncio
+import threading
 import json
 import os
 import sys
@@ -231,13 +237,15 @@ import httpx
 from hunting_harness.gateway import Gateway
 from hunting_harness.models import CaseSpec, QuerySpec
 from hunting_harness.providers.shodan import Shodan
+from hunting_harness.shodan_fixture import ShodanFixtureTransport
 
 async def run():
     entered = asyncio.Event()
-    async def response(request):
-        entered.set()
-        await asyncio.Event().wait()
-    provider = Shodan("offline-fixture", transport=httpx.MockTransport(response))
+    loop = asyncio.get_running_loop()
+    def response(request):
+        loop.call_soon_threadsafe(entered.set)
+        threading.Event().wait(10)
+    provider = Shodan("offline-fixture", transport=ShodanFixtureTransport(response))
     async with Gateway(Path(sys.argv[1]), {"shodan": provider}) as gateway:
         case = gateway.case_create(CaseSpec(hypothesis="Campaign", seeds=["192.0.2.1"],
                                             start="2024-01-01", end="2024-02-01"))

@@ -7,7 +7,17 @@ name = "threat-hunting-harness"
 version = "0.1.0"
 description = "Resumable, evidence-first threat hunts through a shared MCP gateway"
 requires-python = ">=3.11"
-dependencies = ["mcp>=1.26,<2", "httpx>=0.28,<1", "pydantic>=2.11,<3", "python-dotenv>=1.1,<2", "jsonschema>=4.23,<5", "uvicorn>=0.35,<1", "censys-platform==0.16.2"]
+dependencies = [
+    "mcp>=1.26,<2",
+    "httpx>=0.28,<1",
+    "pydantic>=2.11,<3",
+    "python-dotenv>=1.1,<2",
+    "jsonschema>=4.23,<5",
+    "uvicorn>=0.35,<1",
+    "censys-platform==0.16.2",
+    "shodan==1.31.0",
+    "requests>=2.32.5,<3",
+]
 
 [project.scripts]
 hunt = "hunting_harness.cli:main"
@@ -16,7 +26,14 @@ hunt = "hunting_harness.cli:main"
 gti = ["gti-mcp @ git+https://github.com/google/mcp-security@9885ec6856ec72333091cf1a3b2ac1bb26abe149#subdirectory=server/gti"]
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "mypy>=1.15,<2", "ruff>=0.11,<1", "types-jsonschema"]
+dev = [
+    "pytest>=8,<10",
+    "pytest-asyncio>=1,<2",
+    "mypy>=1.15,<2",
+    "ruff>=0.11,<1",
+    "types-jsonschema",
+    "types-requests>=2.33.0.20260906",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hunting_harness"]

@@ -5,6 +5,7 @@ from test_queries import case_spec, finished
 from hunting_harness.gateway import Gateway
 from hunting_harness.models import Expansion, QuerySpec
 from hunting_harness.providers.shodan import Shodan
+from hunting_harness.shodan_fixture import ShodanFixtureTransport
 
 
 async def test_narrowing_keeps_all_candidates_and_incomplete_retrieval(tmp_path):
@@ -20,7 +21,7 @@ async def test_narrowing_keeps_all_candidates_and_incomplete_retrieval(tmp_path)
         ],
     }
     provider = Shodan(
-        "fixture", transport=httpx.MockTransport(lambda r: httpx.Response(200, json=raw))
+        "fixture", transport=ShodanFixtureTransport(lambda r: httpx.Response(200, json=raw))
     )
     async with Gateway(tmp_path, {"shodan": provider}) as gateway:
         case = gateway.case_create(case_spec())
