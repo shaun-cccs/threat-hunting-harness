@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "lazarus-simplextea-2023",
+  "withheld": [
+    "23.254.211.230"
+  ],
+  "known_seed_subset": [
+    "172.93.201.88"
+  ],
+  "source": {
+    "url": "https://github.com/eset/malware-ioc/blob/812c573dc8c354210893775b2de97d1fbf29be1b/nukesped_lazarus/README.adoc",
+    "section": "3CX supply-chain compromise",
+    "commit": "812c573dc8c354210893775b2de97d1fbf29be1b"
+  },
+  "scope": "Historical reported infrastructure association only; no assertion of current malicious use or ownership.",
+  "analyst_assessments": null,
+  "indicator_observation_dates": "Use the cited report where explicit; otherwise unknown. Synthetic provider timestamps are not report claims."
+}

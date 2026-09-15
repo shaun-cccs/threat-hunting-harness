@@ -229,6 +229,13 @@ def script_module(name):
     return module
 
 
+def test_git_release_timestamp_orders_after_legacy_installer():
+    key = script_module("plugin_stdio").version_key
+    assert key("0.1.0+codex.20260915002728") > key("0.1.0+codex.20260915000026959080")
+    assert key("0.1.0+codex.20260915002728") == key("0.1.0+codex.20260915002728000000")
+    assert key("0.2.0") > key("0.1.0+codex.20260915002728")
+
+
 async def test_updated_plugin_replaces_old_backend_without_losing_case(
     plugin_environment, tmp_path
 ):

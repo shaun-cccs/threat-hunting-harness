@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "lazarus-simplextea-2023",
+  "title": "Lazarus SimplexTea and BADCALL Linux / 3CX investigation",
+  "hypothesis": "Investigate distinctive recorded service relationships within the selected historical window.",
+  "seeds": [
+    "172.93.201.88"
+  ],
+  "start": "2023-03-01",
+  "end": "2023-03-31",
+  "limits": {},
+  "sources": [
+    {
+      "url": "https://www.welivesecurity.com/2023/04/20/linux-malware-strengthens-links-lazarus-3cx-supply-chain-attack/",
+      "published_at": "2023-04-20"
+    },
+    {
+      "url": "https://github.com/eset/malware-ioc/blob/812c573dc8c354210893775b2de97d1fbf29be1b/nukesped_lazarus/README.adoc",
+      "section": "3CX supply-chain compromise",
+      "commit": "812c573dc8c354210893775b2de97d1fbf29be1b"
+    }
+  ],
+  "window_basis": "Explicit evaluation slice of the cited historical investigation; not asserted as the entire campaign lifetime.",
+  "observation_fixture": "observations/lazarus-simplextea-2023.json",
+  "conditions": {
+    "collection": "synthetic Shodan HTTP responses only",
+    "provider": "shodan",
+    "provider_version": "api-v1",
+    "client": "MCP Python SDK with scripted coordinator/investigator/reviewer roles",
+    "models_launched": false,
+    "live_provider_calls": 0,
+    "knowledge_policy": "retrospective; post-window and unknown availability retained and counted separately",
+    "random_seed": 0,
+    "analyst_assessments": null,
+    "credit_cost": null
+  }
+}

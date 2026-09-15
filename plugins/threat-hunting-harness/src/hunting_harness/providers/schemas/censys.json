@@ -1,0 +1,115 @@
+{
+  "get_host": {
+    "additionalProperties": false,
+    "properties": {
+      "host_id": {
+        "type": "string",
+        "description": "IP address (IPv4 or IPv6) to query.\n          Example: \"1.1.1.1\" or \"2001:4860:4860::8888\""
+      },
+      "at_time": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "ISO 8601 timestamp to query historical data.\n                  Example: \"2024-01-15T10:30:00Z\"\n                  If None, returns current/latest data."
+      }
+    },
+    "required": [
+      "host_id"
+    ],
+    "type": "object"
+  },
+  "get_host_timeline": {
+    "additionalProperties": false,
+    "properties": {
+      "host_id": {
+        "type": "string",
+        "description": "IP address to query timeline for.\n          Example: \"192.168.1.1\""
+      },
+      "start_time": {
+        "type": "string",
+        "description": "ISO 8601 A timestamp for timeline query.\n              Example: \"2024-01-01T00:00:00Z\""
+      },
+      "end_time": {
+        "type": "string",
+        "description": "ISO 8601 Another timestamp for timeline query.\n            Example: \"2024-12-31T23:59:59Z\""
+      }
+    },
+    "required": [
+      "host_id",
+      "start_time",
+      "end_time"
+    ],
+    "type": "object"
+  },
+  "search": {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Censys search query using proper Censys query language syntax.\n\n        **VALID EXAMPLES:**\n        - `host.services.protocol: SSH` (SSH servers)\n        - `host.services.port: 22` (services running on port 22)\n        - `host.location.country: \"United States\" AND host.services.port: 443` (US HTTPS)\n        - `host.services.software.product: nginx` (nginx servers)\n        - `host.services.cert.parsed.subject.common_name: example.com` (certificates)\n        - `cert.names: \"example.com\"` (certificates whose subject or SANs match a domain)\n\n        **INVALID EXAMPLES:**\n        - `port=22` (wrong syntax, use `host.services.port: 22`)\n        - `country=US` (wrong syntax, use `host.location.country: \"US\"`)\n        - `ssl_cert=example.com` (wrong field, use correct certificate field)\n        - `cert.parsed.names: \"example.com\"` (not queryable \u2014 use `cert.names: \"example.com\"`)"
+      },
+      "fields": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Specific fields to return to reduce response size.\n               Example: [\"host.ip\", \"host.services.port\", \"host.location.country\"]\n               **TIP**: Specify fields to prevent context window overflow!\n               If None, returns default fields."
+      },
+      "page_size": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": 50,
+        "description": "Number of results per page (1-1000).\n            Default: 50. If None, uses the default."
+      },
+      "page_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Token for pagination. Use next_page_token from previous response.\n                     If None, starts from first page."
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "type": "object"
+  },
+  "get_certificate": {
+    "additionalProperties": false,
+    "properties": {
+      "certificate_id": {
+        "type": "string",
+        "description": "Certificate SHA-256 fingerprint in hex format.\n                 Example: \"4954bd2f8791c4b645bfe451323dbea1986af39c5d35aa030811aa07f34edf3b\""
+      }
+    },
+    "required": [
+      "certificate_id"
+    ],
+    "type": "object"
+  }
+}
