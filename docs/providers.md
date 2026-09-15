@@ -121,16 +121,18 @@ unless explicitly refreshed. Shodan uses SDK `info()` for one account-metadata
 request and reports status without retaining account balances. Censys uses the SDK rather than a hosted MCP inventory.
 Its check makes one account-metadata request: organization details when an organization
 ID is configured, or Free-user credit metadata otherwise. It reports authentication
-context without retaining raw account details or querying an indicator.
+context without retaining raw account details or querying an indicator. GreyNoise
+uses `GET https://api.greynoise.io/v1/account` with the `key` header for one metadata
+request; account response bodies are not retained.
 `hunt smoke --ip 1.1.1.1` makes one existing Shodan host lookup with `history=false`,
 without search or retries. Run only for an analyst-selected indicator and retain the
-sanitized output. The coordinating agent already ran the bounded checks in this session:
+sanitized output. Earlier bounded checks recorded:
 Shodan and GTI metadata authenticated (HTTP 200), the earlier Censys MCP inventory
 contained 22 tools,
-and GreyNoise metadata returned HTTP 401. Shodan's one host lookup returned 16
-observations. These results do not establish historical/search entitlements, and
-GreyNoise account access remains unvalidated. No provider calls were made by this
-implementation agent.
+and the incorrect GreyNoise `/v3/user` endpoint returned HTTP 401. A debugging
+follow-up on 2026-09-15 corrected the GreyNoise check to `/v1/account` and verified
+HTTP 200 with the same credentials. Shodan's one host lookup returned 16
+observations. These results do not establish historical/search entitlements.
 
 ## Primary references
 

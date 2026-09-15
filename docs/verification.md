@@ -149,7 +149,7 @@ A native Codex session, with no per-run tool-policy overrides or manually starte
 
 The headless developer check is `python scripts/verify_plugin.py --output artifacts/native-plugin-check` after installation, with the host already permitting the hunting tools. The successful personal-installation run and sanitized delegation evidence are retained locally under `artifacts/native-plugin-verified/`. This checks plugin setup, shared state, delegation, and exports. The earlier synthetic Shodan workflow below separately checks reviewed findings.
 
-The installed plugin also loaded the original workspace's `.env`, detected all four configured providers, and reported zero requests during setup/configuration inspection. Its `evaluate_benchmarks` tool successfully ran the bundled offline corpus and wrote evaluation artifacts with zero live provider requests. No additional live authentication or intelligence calls were made for plugin verification; the previously observed GreyNoise HTTP 401 remains unresolved.
+The installed plugin also loaded the original workspace's `.env`, detected all four configured providers, and reported zero requests during setup/configuration inspection. Its `evaluate_benchmarks` tool successfully ran the bundled offline corpus and wrote evaluation artifacts with zero live provider requests. No additional live authentication or intelligence calls were made for plugin verification. The previously observed GreyNoise HTTP 401 was resolved in the account-check debugging follow-up below.
 
 Runtime tests exercise real stdio processes and an automatically started backend: concurrent clients share query deduplication and limits, cases survive idle shutdown, credentials reload after editing `.env`, and plugin upgrades replace the service without discarding cases. Failure tests cover interrupted preparation, configuration errors, retry, and connection-check serialization. Bootstrap and installer tests check package integrity, credential isolation, preserved user files/settings, and scoped tool policies. The final suite passed **107 tests**; strict mypy, Ruff, lock validation, source/wheel builds, and plugin/skill validation passed. Two upstream Starlette test-client deprecation warnings remain.
 
@@ -161,11 +161,57 @@ The installer uses Codex's configuration API to approve only the 21 bundled name
 | --- | --- | --- | --- |
 | Shodan | Account metadata | HTTP 200 | One metadata request |
 | GTI / VirusTotal | Account metadata | HTTP 200 | One metadata request |
-| GreyNoise | Account metadata | HTTP 401; account access not validated | One metadata request |
+| GreyNoise | Initial account check at incorrect `/v3/user` endpoint | HTTP 401; superseded by the follow-up below | One metadata request |
 | Censys | Authenticated MCP initialization and tool inventory | Connected; 22 tools returned; four selected schemas match | One MCP session; zero intelligence tool calls |
 | Shodan | Existing host report for `1.1.1.1`, `history=false` | Completed; 16 observations retained | One query, one API request, zero searches and retries; credits unknown |
 
 These checks made no direct target requests and requested no fresh scans. Metadata authentication does not establish all search/history entitlements. No live GTI, Censys, or GreyNoise intelligence queries were performed. Provider MCP dependencies can expand into upstream calls internally; unknown request counts remain unknown.
+
+### GreyNoise account-check correction (2026-09-15)
+
+The check used `/v3/user`, which returned HTTP 401 even with a valid API key.
+GreyNoise's [pinned client implementation](https://github.com/GreyNoise-Intelligence/greynoise-mcp-server/blob/cc3204dcde0994daebc09c0ac1a8ceea6cc59b81/src/greynoise/client.ts)
+uses `/v1/account` with the same `key` header. Changing only the URL returned HTTP
+200. There was no environment override or surrounding whitespace in the loaded
+credential. The corrected `validate_connections` path also returned
+`{"status": "authenticated", "http_status": 200, "requests": 1}`.
+
+The follow-up made four metadata requests: two reproductions against `/v3/user`,
+one probe against `/v1/account`, and one verification through the corrected harness.
+It made zero intelligence queries and retained no account response bodies or keys.
+Sanitized status reports are in `artifacts/greynoise-debug/` in the debugging worktree.
+Offline regression coverage reproduces the old endpoint's false rejection and
+checks success, authentication/entitlement failures, rate limiting, one-request
+accounting, and omission of account details from retained reports.
+
+### GreyNoise live query follow-up (2026-09-15)
+
+Three live operations ran through the debugging worktree's `Gateway.query_submit`,
+`McpSource`, and pinned GreyNoise MCP server with the existing API key:
+
+| Operation | Request | Result |
+| --- | --- | --- |
+| `lookup-ip-context` | `1.1.1.1` | One record identifying Cloudflare Public DNS |
+| `gnql-query` | `classification:benign last_seen:1d`, `size=1` | One record, `45.79.191.178`, classified benign and last seen 2026-09-15 |
+| `gnql-timeseries` | `classification:benign`, 02:00–03:00 UTC, `size=1` | 8,839 records in the `2026-09-15-02` bucket |
+
+Context and search returned partial results with `fields_restricted_by_entitlement`.
+Restricted fields include ports, HTTP paths, OS, CVEs, and JA3/JA4 fingerprints.
+Recall returned history with `per_bucket_history_coverage_unverified`; its upstream
+response did not honor `size=1`, so that parameter is not an enforced record cap.
+All 8,841 records were retained. These were three query submissions and three MCP
+calls; upstream request counts and credits remain unknown. There were no manual
+retries, pagination requests, fresh scans, or direct requests to observed IPs.
+
+The installed plugin failed before provider access because bootstrap requires a
+wheel for `shodan==1.31.0` while disabling source builds, and no usable wheel was
+available. The checks used the prepared development environment through the same
+allowlisted gateway/adapter path. Installed-plugin query execution remains blocked
+by that separate bootstrap issue.
+
+The debugging worktree retains `artifacts/greynoise-debug/live-queries/summary.md`,
+`query-results.json`, and `export/case.json` under the same directory. No campaign
+or attribution finding was proposed by these operation checks.
 
 Reproduce the metadata checks with `hunt connections --live --refresh`. `hunt connections --live` uses the cached result if available. The explicit Shodan check is `hunt smoke --ip 1.1.1.1`; each invocation creates a new case limited to one query and one API request.
 
