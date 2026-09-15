@@ -1,4 +1,6 @@
-# Hunting clients
+# Standalone hunting clients (developer compatibility)
+
+Ordinary Codex use now goes through the [self-contained plugin](plugin.md): install it, fill the workspace `.env`, and use `$hunt` in the current conversation. This page documents the retained standalone gateway and generated client profiles for development and earlier validation. Its setup commands, separate analyst CLI, and HTTP tool restrictions apply to that legacy interface. The plugin starts its own shared service, uses native Codex agents, writes exports, and records explicitly requested analyst decisions in chat through its additional plugin tools.
 
 Codex is the current implementation and verification target. Existing Claude profile support is retained, but further Claude work and native verification are deferred at the user's request. Both profiles connect coordinator, investigator, and evidence-reviewer roles to the same authenticated loopback hunting MCP gateway. The gateway owns the case ID, query deduplication, evidence, branches, source gaps, and optional limits. A separate analyst CLI records human decisions; `analyst_decide` is absent from the MCP tool inventory.
 

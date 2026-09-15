@@ -1,0 +1,20 @@
+{
+  "name": "threat-hunting",
+  "interface": {
+    "displayName": "Threat Hunting"
+  },
+  "plugins": [
+    {
+      "name": "threat-hunting-harness",
+      "source": {
+        "source": "local",
+        "path": "./plugins/threat-hunting-harness"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

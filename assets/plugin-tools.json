@@ -1,0 +1,857 @@
+[
+  {
+    "name": "case_create",
+    "description": "Create a case without contacting any provider.",
+    "inputSchema": {
+      "$defs": {
+        "CaseSpec": {
+          "additionalProperties": false,
+          "properties": {
+            "hypothesis": {
+              "minLength": 1,
+              "title": "Hypothesis",
+              "type": "string"
+            },
+            "seeds": {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "title": "Seeds",
+              "type": "array"
+            },
+            "start": {
+              "format": "date",
+              "title": "Start",
+              "type": "string"
+            },
+            "end": {
+              "format": "date",
+              "title": "End",
+              "type": "string"
+            },
+            "limits": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "title": "Limits",
+              "type": "object"
+            }
+          },
+          "required": [
+            "hypothesis",
+            "seeds",
+            "start",
+            "end"
+          ],
+          "title": "CaseSpec",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "spec": {
+          "$ref": "#/$defs/CaseSpec"
+        }
+      },
+      "required": [
+        "spec"
+      ],
+      "title": "case_createArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "case_createDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "case_read",
+    "description": "Read the retained case and recorded hunt status.",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "case_readArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "case_readDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "playbooks",
+    "description": "Read shared playbooks before selecting an investigation strategy.",
+    "inputSchema": {
+      "properties": {},
+      "title": "playbooksArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "playbooksDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "provider_operations",
+    "description": "",
+    "inputSchema": {
+      "properties": {},
+      "title": "provider_operationsArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "provider_operationsDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "query_submit",
+    "description": "",
+    "inputSchema": {
+      "$defs": {
+        "QuerySpec": {
+          "additionalProperties": false,
+          "properties": {
+            "provider": {
+              "title": "Provider",
+              "type": "string"
+            },
+            "operation": {
+              "title": "Operation",
+              "type": "string"
+            },
+            "arguments": {
+              "additionalProperties": true,
+              "title": "Arguments",
+              "type": "object"
+            },
+            "pivot_from": {
+              "title": "Pivot From",
+              "type": "string"
+            },
+            "purpose": {
+              "minLength": 1,
+              "title": "Purpose",
+              "type": "string"
+            },
+            "refresh": {
+              "default": false,
+              "title": "Refresh",
+              "type": "boolean"
+            },
+            "continuation_of": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Continuation Of"
+            }
+          },
+          "required": [
+            "provider",
+            "operation",
+            "arguments",
+            "pivot_from",
+            "purpose"
+          ],
+          "title": "QuerySpec",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "query": {
+          "$ref": "#/$defs/QuerySpec"
+        }
+      },
+      "required": [
+        "case_id",
+        "query"
+      ],
+      "title": "query_submitArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "query_submitDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "job_read",
+    "description": "",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "job_id"
+      ],
+      "title": "job_readArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "job_readDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "candidate_select",
+    "description": "",
+    "inputSchema": {
+      "$defs": {
+        "Expansion": {
+          "additionalProperties": false,
+          "properties": {
+            "candidate": {
+              "title": "Candidate",
+              "type": "string"
+            },
+            "evidence_ids": {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "title": "Evidence Ids",
+              "type": "array"
+            },
+            "hypothesis": {
+              "minLength": 1,
+              "title": "Hypothesis",
+              "type": "string"
+            },
+            "rationale": {
+              "minLength": 1,
+              "title": "Rationale",
+              "type": "string"
+            },
+            "relationship": {
+              "title": "Relationship",
+              "type": "string"
+            },
+            "distinctive": {
+              "default": false,
+              "title": "Distinctive",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "candidate",
+            "evidence_ids",
+            "hypothesis",
+            "rationale",
+            "relationship"
+          ],
+          "title": "Expansion",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "selection": {
+          "$ref": "#/$defs/Expansion"
+        }
+      },
+      "required": [
+        "case_id",
+        "selection"
+      ],
+      "title": "candidate_selectArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "candidate_selectDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "candidate_defer",
+    "description": "",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "candidate": {
+          "title": "Candidate",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "candidate",
+        "rationale"
+      ],
+      "title": "candidate_deferArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "candidate_deferDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "finding_propose",
+    "description": "",
+    "inputSchema": {
+      "$defs": {
+        "Claim": {
+          "additionalProperties": false,
+          "properties": {
+            "candidate": {
+              "title": "Candidate",
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "relatedness",
+                "historical_association",
+                "current_malicious_use",
+                "attribution"
+              ],
+              "title": "Kind",
+              "type": "string"
+            },
+            "statement": {
+              "minLength": 1,
+              "title": "Statement",
+              "type": "string"
+            },
+            "evidence_ids": {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "title": "Evidence Ids",
+              "type": "array"
+            },
+            "alternative_explanations": {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "title": "Alternative Explanations",
+              "type": "array"
+            },
+            "freshness_start": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Freshness Start"
+            },
+            "freshness_end": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Freshness End"
+            },
+            "attribution_basis": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Attribution Basis"
+            },
+            "hypothesis": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Hypothesis"
+            }
+          },
+          "required": [
+            "candidate",
+            "kind",
+            "statement",
+            "evidence_ids",
+            "alternative_explanations"
+          ],
+          "title": "Claim",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "claim": {
+          "$ref": "#/$defs/Claim"
+        }
+      },
+      "required": [
+        "case_id",
+        "claim"
+      ],
+      "title": "finding_proposeArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "finding_proposeDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "finding_review",
+    "description": "",
+    "inputSchema": {
+      "$defs": {
+        "Review": {
+          "additionalProperties": false,
+          "properties": {
+            "reviewer": {
+              "minLength": 1,
+              "title": "Reviewer",
+              "type": "string"
+            },
+            "assessment": {
+              "enum": [
+                "supported",
+                "challenged",
+                "insufficient"
+              ],
+              "title": "Assessment",
+              "type": "string"
+            },
+            "rationale": {
+              "minLength": 1,
+              "title": "Rationale",
+              "type": "string"
+            },
+            "flags": {
+              "items": {
+                "enum": [
+                  "shared_infrastructure",
+                  "stale_evidence",
+                  "conflicting_observations",
+                  "reassignment",
+                  "copied_sources",
+                  "missing_dates",
+                  "unsupported_attribution"
+                ],
+                "type": "string"
+              },
+              "title": "Flags",
+              "type": "array"
+            },
+            "alternative_explanations": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Alternative Explanations",
+              "type": "array"
+            }
+          },
+          "required": [
+            "reviewer",
+            "assessment",
+            "rationale"
+          ],
+          "title": "Review",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "finding_id": {
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "review": {
+          "$ref": "#/$defs/Review"
+        }
+      },
+      "required": [
+        "case_id",
+        "finding_id",
+        "review"
+      ],
+      "title": "finding_reviewArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "finding_reviewDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "branch_record",
+    "description": "",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "pivot": {
+          "title": "Pivot",
+          "type": "string"
+        },
+        "hypothesis": {
+          "title": "Hypothesis",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "branch_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch Id"
+        },
+        "evidence_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Ids"
+        },
+        "query_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Query Ids"
+        }
+      },
+      "required": [
+        "case_id",
+        "pivot",
+        "hypothesis",
+        "status",
+        "reason"
+      ],
+      "title": "branch_recordArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "branch_recordDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "hunt_settle",
+    "description": "",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "hunt_settleArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "hunt_settleDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "case_resume",
+    "description": "",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "new_seeds": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "New Seeds"
+        },
+        "refresh": {
+          "default": false,
+          "title": "Refresh",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "case_resumeArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "case_resumeDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "case_export",
+    "description": "",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "case_exportArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "case_exportDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "case_list",
+    "description": "List this workspace's retained hunts to reopen a case without starting over.",
+    "inputSchema": {
+      "properties": {},
+      "title": "case_listArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "case_listDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "analyst_decide",
+    "description": "Record an analyst's explicit chat decision; quote their instruction in confirmation.\n\n        Only the coordinator may call this after the user has accepted, rejected, or requested\n        more work on the finding. Investigator/reviewer judgments are not analyst decisions.\n        The confirmation is an audit record, not authentication of a human identity.\n        ",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "finding_id": {
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "decision": {
+          "title": "Decision",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        },
+        "confirmation": {
+          "title": "Confirmation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "finding_id",
+        "decision",
+        "rationale",
+        "confirmation"
+      ],
+      "title": "analyst_decideArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "analyst_decideDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "provider_connections",
+    "description": "Inspect .env configuration; live=True opts into bounded account metadata checks.\n\n        Cached live results are reused unless refresh=True. Never queries an indicator.\n        ",
+    "inputSchema": {
+      "properties": {
+        "live": {
+          "default": false,
+          "title": "Live",
+          "type": "boolean"
+        },
+        "refresh": {
+          "default": false,
+          "title": "Refresh",
+          "type": "boolean"
+        }
+      },
+      "title": "provider_connectionsArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "provider_connectionsDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "case_export_files",
+    "description": "Write retained Markdown, JSON and CSV reports and return their local file paths.",
+    "inputSchema": {
+      "properties": {
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "case_export_filesArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "case_export_filesDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "evaluate_benchmarks",
+    "description": "Run synthetic benchmarks and save metrics/exports without live calls or models.",
+    "inputSchema": {
+      "properties": {},
+      "title": "evaluate_benchmarksArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "evaluate_benchmarksDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "hunting_setup",
+    "description": "Prepare this workspace and read .env without provider queries.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "hunting_status",
+    "description": "Read setup progress and configuration without provider queries.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  }
+]

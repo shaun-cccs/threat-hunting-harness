@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic_shodan",
+  "hosts": {
+    "37.59.60.199": {
+      "data": [
+        {
+          "ip_str": "37.59.60.199",
+          "timestamp": "2019-11-01T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-turla-armenia-2020"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2020-03-12",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        }
+      ]
+    }
+  },
+  "searches": {
+    "ssl.cert.fingerprint:\"harness-synthetic-turla-armenia-2020\"": {
+      "total": 3,
+      "matches": [
+        {
+          "ip_str": "134.209.222.206",
+          "timestamp": "2019-11-01T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-turla-armenia-2020"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2020-03-12",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        },
+        {
+          "ip_str": "192.0.2.10",
+          "timestamp": "2019-11-01T00:00:00Z",
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "generic-shared-hosting"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2020-03-12",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        },
+        {
+          "ip_str": "198.51.100.10",
+          "timestamp": null,
+          "port": 443,
+          "transport": "tcp",
+          "data": "SYNTHETIC replay observation; not collected from a provider",
+          "ssl": {
+            "cert": {
+              "fingerprint": {
+                "sha256": "harness-synthetic-turla-armenia-2020"
+              }
+            }
+          },
+          "fixture": {
+            "synthetic": true,
+            "available_at": "2020-03-12",
+            "availability_basis": "Public report publication, not verified provider availability"
+          }
+        }
+      ]
+    }
+  },
+  "fail_hosts": {}
+}

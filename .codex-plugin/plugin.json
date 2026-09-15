@@ -1,0 +1,25 @@
+{
+  "name": "threat-hunting-harness",
+  "version": "0.1.0+codex.20260915002728",
+  "description": "Resumable threat hunts inside Codex, with automatic provider setup and retained evidence.",
+  "author": {
+    "name": "Threat Hunting Harness contributors"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Threat Hunting",
+    "shortDescription": "Fill in .env, then investigate with $hunt.",
+    "longDescription": "Run evidence-based threat hunts in your current Codex session. The plugin prepares its own provider runtime, shares resumable cases across native Codex agents, and exports reviewed findings.",
+    "developerName": "Threat Hunting Harness contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "$hunt Check my provider configuration.",
+      "$hunt Resume my latest investigation."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

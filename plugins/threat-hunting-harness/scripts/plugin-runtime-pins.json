@@ -1,0 +1,61 @@
+{
+  "uv_version": "0.12.13",
+  "python_version": "3.12.12",
+  "node_version": "22.22.0",
+  "gti_revision": "9885ec6856ec72333091cf1a3b2ac1bb26abe149",
+  "greynoise_revision": "cc3204dcde0994daebc09c0ac1a8ceea6cc59b81",
+  "uv": {
+    "linux-x86_64": {
+      "url": "https://files.pythonhosted.org/packages/0c/31/f774e18ea9282f63fb3a4f83db8b818b860fb10efda1d295e4547e993bf8/uv-0.12.13-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "5312891392eb5b72eaca9b880e85fe3e706a2b11342e59f7a5cf0304d14d5cc5"
+    },
+    "linux-aarch64": {
+      "url": "https://files.pythonhosted.org/packages/6a/94/0b1156a245e6ce20d68fa401c34a18d304d7dd0be0569345e62459e34821/uv-0.12.13-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl",
+      "sha256": "891aff3e186cd5844102750372304e9ca20edffc50cb39a14cd047ea3416de75"
+    },
+    "darwin-x86_64": {
+      "url": "https://files.pythonhosted.org/packages/7b/e9/de1916ac6602c226838aa1eee1033ce68138427399c63f9b47a5a1fa3dba/uv-0.12.13-py3-none-macosx_10_12_x86_64.whl",
+      "sha256": "ac7f135750b7419283029edb93453b4d41c7d7ff90f9b3860a6e474ddf98f016"
+    },
+    "darwin-aarch64": {
+      "url": "https://files.pythonhosted.org/packages/2a/33/ef14dc7c9c4cfaf0c3a4aed5a298b76b5dea94c75b233f7620c49c9b2e09/uv-0.12.13-py3-none-macosx_11_0_arm64.whl",
+      "sha256": "f86e5f02883c2e7a21bf522f4aa520c20d4f779d9a3368fbd6cdfe4a8f9549b5"
+    }
+  },
+  "node": {
+    "linux-x86_64": {
+      "url": "https://nodejs.org/dist/v22.22.0/node-v22.22.0-linux-x64.tar.gz",
+      "sha256": "c33c39ed9c80deddde77c960d00119918b9e352426fd604ba41638d6526a4744"
+    },
+    "linux-aarch64": {
+      "url": "https://nodejs.org/dist/v22.22.0/node-v22.22.0-linux-arm64.tar.gz",
+      "sha256": "25ba95dfb96871fa2ef977f11f95ea90818c8fa15c0f2110771db08d4ba423be"
+    },
+    "darwin-x86_64": {
+      "url": "https://nodejs.org/dist/v22.22.0/node-v22.22.0-darwin-x64.tar.gz",
+      "sha256": "5ea50c9d6dea3dfa3abb66b2656f7a4e1c8cef23432b558d45fb538c7b5dedce"
+    },
+    "darwin-aarch64": {
+      "url": "https://nodejs.org/dist/v22.22.0/node-v22.22.0-darwin-arm64.tar.gz",
+      "sha256": "5ed4db0fcf1eaf84d91ad12462631d73bf4576c1377e192d222e48026a902640"
+    }
+  },
+  "build_wheels": [
+    {
+      "url": "https://files.pythonhosted.org/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl",
+      "sha256": "062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922"
+    },
+    {
+      "url": "https://files.pythonhosted.org/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl",
+      "sha256": "708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248"
+    }
+  ],
+  "gti": {
+    "url": "https://codeload.github.com/google/mcp-security/tar.gz/9885ec6856ec72333091cf1a3b2ac1bb26abe149",
+    "sha256": "7d2f90688dbd75836251482df126dc517674002bceaf5ebabfe9bb41e0162109"
+  },
+  "greynoise": {
+    "url": "https://codeload.github.com/GreyNoise-Intelligence/greynoise-mcp-server/tar.gz/cc3204dcde0994daebc09c0ac1a8ceea6cc59b81",
+    "sha256": "a0629a52b3ca241029081ac40b88a673f1f56826d4fbaa8c509256b1c9a1eef9"
+  }
+}
