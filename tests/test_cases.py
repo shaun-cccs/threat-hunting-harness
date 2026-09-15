@@ -181,3 +181,160 @@ def test_grown_case_stays_readable_by_section_and_refuses_an_oversized_full_read
         gateway.case_read(case["id"], section="nonsense")
     with pytest.raises(ValueError, match="View must be"):
         gateway.case_read(case["id"], view="everything")
+
+
+def evidence_record(index: int, payload: object) -> dict:
+    return {
+        "id": f"e{index}",
+        "raw": payload,
+        "provider": "fixture",
+        "query_ids": ["q1"],
+        "retrieved_at": "2026-01-05T00:00:00+00:00",
+        "indicators": ["192.0.2.1"],
+    }
+
+
+def stored_case(root: Path, case_id: str) -> dict:
+    import json
+    import sqlite3
+
+    db = sqlite3.connect(root / "cases.sqlite")
+    try:
+        row = db.execute("SELECT data FROM cases WHERE id = ?", (case_id,)).fetchone()
+        return dict(json.loads(row[0]))
+    finally:
+        db.close()
+
+
+def test_retained_payloads_live_outside_the_case_document(tmp_path):
+    """The case document is read on every disposition, so payloads must not travel inside it."""
+    from test_queries import case_spec
+
+    from hunting_harness.gateway import Gateway
+
+    gateway = Gateway(tmp_path)
+    case = gateway.case_create(case_spec())
+
+    def grow(record):
+        record["evidence"].extend(evidence_record(i, {"payload": f"p{i}"}) for i in range(5))
+        return record
+
+    gateway.store.change(case["id"], grow)
+
+    assert all("raw" not in item for item in stored_case(tmp_path, case["id"])["evidence"])
+    assert all("raw" not in item for item in gateway.store.read(case["id"])["evidence"])
+
+    assert gateway.store.read_raw(case["id"], ["e1", "e3"]) == {
+        "e1": {"payload": "p1"},
+        "e3": {"payload": "p3"},
+    }
+    assert gateway.store.read_raw(case["id"], ["e1", "e1", "missing"]) == {"e1": {"payload": "p1"}}
+    assert gateway.store.read_raw(case["id"], []) == {}
+    assert len(gateway.store.read_raw(case["id"])) == 5
+
+    page = gateway.case_read(case["id"], section="evidence", offset=1, limit=2, view="full")
+    assert [item["raw"] for item in page["items"]] == [{"payload": "p1"}, {"payload": "p2"}]
+
+
+def test_a_change_leaves_already_retained_payloads_alone(tmp_path):
+    """Only newly appended evidence is written, so a change never rewrites the retained volume."""
+    import sqlite3
+
+    from test_queries import case_spec
+
+    from hunting_harness.gateway import Gateway
+
+    gateway = Gateway(tmp_path)
+    case = gateway.case_create(case_spec())
+    gateway.store.change(
+        case["id"], lambda c: c["evidence"].append(evidence_record(0, {"payload": "first"}))
+    )
+
+    db = sqlite3.connect(tmp_path / "cases.sqlite")
+    try:
+        with db:
+            db.execute(
+                "UPDATE evidence_raw SET raw = ? WHERE case_id = ? AND evidence_id = ?",
+                ('{"payload": "sentinel"}', case["id"], "e0"),
+            )
+    finally:
+        db.close()
+
+    gateway.store.change(
+        case["id"], lambda c: c["evidence"].append(evidence_record(1, {"payload": "second"}))
+    )
+
+    assert gateway.store.read_raw(case["id"]) == {
+        "e0": {"payload": "sentinel"},
+        "e1": {"payload": "second"},
+    }
+
+
+def test_a_case_written_with_inline_payloads_is_migrated_when_it_is_opened(tmp_path):
+    """Cases retained before payloads had their own table must keep reading identically."""
+    import json
+    import sqlite3
+
+    from test_queries import case_spec
+
+    from hunting_harness.gateway import Gateway
+    from hunting_harness.store import Store
+
+    gateway = Gateway(tmp_path)
+    case = gateway.case_create(case_spec())
+    payloads = {f"e{i}": {"payload": f"p{i}", "nested": {"port": 502 + i}} for i in range(3)}
+
+    document = stored_case(tmp_path, case["id"])
+    document["evidence"] = [evidence_record(i, payloads[f"e{i}"]) for i in range(3)]
+    db = sqlite3.connect(tmp_path / "cases.sqlite")
+    try:
+        with db:
+            db.execute("UPDATE cases SET data = ? WHERE id = ?", (json.dumps(document), case["id"]))
+            db.execute("DELETE FROM evidence_raw")
+            db.execute("PRAGMA user_version = 0")
+    finally:
+        db.close()
+
+    Store(tmp_path)
+
+    assert all("raw" not in item for item in stored_case(tmp_path, case["id"])["evidence"])
+    assert Store(tmp_path).read_raw(case["id"]) == payloads
+    page = Gateway(tmp_path).case_read(case["id"], section="evidence", limit=3, view="full")
+    assert [item["raw"] for item in page["items"]] == [payloads[f"e{i}"] for i in range(3)]
+
+
+def test_migration_runs_once_and_is_safe_to_repeat(tmp_path):
+    """An interrupted upgrade must be re-runnable, and a migrated database not re-scanned."""
+    import sqlite3
+
+    from test_queries import case_spec
+
+    from hunting_harness.gateway import Gateway
+    from hunting_harness.store import Store
+
+    gateway = Gateway(tmp_path)
+    case = gateway.case_create(case_spec())
+    gateway.store.change(
+        case["id"], lambda c: c["evidence"].append(evidence_record(0, {"payload": "kept"}))
+    )
+
+    def user_version() -> int:
+        db = sqlite3.connect(tmp_path / "cases.sqlite")
+        try:
+            return int(db.execute("PRAGMA user_version").fetchone()[0])
+        finally:
+            db.close()
+
+    assert user_version() == Store.SCHEMA_VERSION
+
+    db = sqlite3.connect(tmp_path / "cases.sqlite")
+    try:
+        with db:
+            db.execute("PRAGMA user_version = 0")
+    finally:
+        db.close()
+
+    for _ in range(2):
+        Store(tmp_path)
+        assert user_version() == Store.SCHEMA_VERSION
+        assert Store(tmp_path).read_raw(case["id"]) == {"e0": {"payload": "kept"}}

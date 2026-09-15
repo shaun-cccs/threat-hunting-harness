@@ -137,6 +137,8 @@ class Gateway:
             if offset < 0 or limit < 1:
                 raise ValueError("Offset must be positive and limit at least one")
             items = case[section][offset : offset + limit]
+            if section == "evidence" and view == "full":
+                self._hydrate(case_id, items)
             return {
                 "case_id": case["id"],
                 "section": section,
@@ -151,6 +153,7 @@ class Gateway:
                 "status_summary": case["status_summary"],
             }
         if view == "full":
+            self._hydrate(case_id, case["evidence"])
             size = len(json.dumps(case))
             if size > self.FULL_LIMIT:
                 raise ValueError(
@@ -162,9 +165,24 @@ class Gateway:
             case[name] = [self._digest(name, item) for item in case[name]]
         return case
 
+    def _hydrate(self, case_id: str, evidence: list[Record]) -> list[Record]:
+        """Attach retained payloads to these evidence records in one batched fetch.
+
+        Payloads live outside the case document, so anything that actually reads `raw` asks for
+        exactly the records it returns. Fetching per record instead would turn a paged read into
+        one query per item.
+        """
+        if not evidence:
+            return evidence
+        payloads = self.store.read_raw(case_id, [item["id"] for item in evidence])
+        for item in evidence:
+            item["raw"] = payloads.get(item["id"])
+        return evidence
+
     def _whole_case(self, case_id: str) -> Record:
         """Every retained field, for writers that are not bound by a response size ceiling."""
         case = self.store.read(case_id)
+        self._hydrate(case_id, case["evidence"])
         case["usage"] = self._usage(case)
         case["reservations"] = {
             measure: self._reserved(case, measure) for measure in ("mcp_calls", "api_requests")
@@ -243,11 +261,19 @@ class Gateway:
 
     def candidate_select(self, case_id: str, selection: Expansion) -> Record:
         """Select a retained candidate for expansion using evidence aligned with campaign dates."""
-        return self.store.change(case_id, lambda c: analysis.select(c, selection))
+        return self.store.change(
+            case_id,
+            lambda c: analysis.select(c, selection),
+            lambda c: list(selection.evidence_ids),
+        )
 
     def finding_propose(self, case_id: str, claim: Claim) -> Record:
         """Propose a finding linked to retained evidence for subsequent review."""
-        return self.store.change(case_id, lambda c: analysis.propose(c, claim))
+        return self.store.change(
+            case_id,
+            lambda c: analysis.propose(c, claim),
+            lambda c: list(claim.evidence_ids),
+        )
 
     def finding_review(self, case_id: str, finding_id: str, review: Review) -> Record:
         """Record an evidence review of a finding before the analyst's decision."""
@@ -266,7 +292,21 @@ class Gateway:
         A deferral without cited evidence is recorded as `uninspected` and reported as an open
         lead at settle: narrowing an unread candidate postpones the question, it does not answer it.
         """
-        return self.store.change(case_id, lambda c: lifecycle.defer(c, deferral))
+        return self.store.change(
+            case_id,
+            lambda c: lifecycle.defer(c, deferral),
+            lambda c: self._candidate_evidence_ids(c, indicator(deferral.candidate)),
+        )
+
+    @staticmethod
+    def _candidate_evidence_ids(case: Record, value: str) -> list[str]:
+        """The candidate's evidence, for a change that has to inspect retained payloads.
+
+        An unknown candidate yields nothing so the change itself still raises, keeping the error
+        the caller sees unchanged.
+        """
+        item = next((c for c in case["candidates"] if c["indicator"] == value), None)
+        return list(item["evidence_ids"]) if item else []
 
     def coverage_record(
         self,
